@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "OpenWatch",
-  description: "Track real-time stock prices get personalized alerts and explore detailed comapany insights",
+  description: "Track stock prices, follow your watchlist and explore detailed company insights",
 };
 
 export default function RootLayout({
