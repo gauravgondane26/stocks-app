@@ -1,4 +1,5 @@
 import TradingViewWidget from "@/components/TradingViewWidget";
+import { requireUser } from "@/lib/better-auth/session";
 import {
   HEATMAP_WIDGET_CONFIG,
   MARKET_DATA_WIDGET_CONFIG,
@@ -6,7 +7,9 @@ import {
   TOP_STORIES_WIDGET_CONFIG,
 } from "@/lib/constants";
 
-const Home = () => {
+const Home = async () => {
+  await requireUser();
+
   const scriptUrl =
     "https://s3.tradingview.com/external-embedding/embed-widget-";
   return (
