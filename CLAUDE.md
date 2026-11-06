@@ -97,11 +97,10 @@ The `(root)` route group is for pages that will require a session, and `(auth)` 
 
 ### TradingView widgets
 
-`components/TradingviewWidget.tsx` renders the container and `hooks/useTradingviewWidget.tsx` injects the script. TradingView embeds read their config from the JSON body of the `<script>` tag, so the hook writes the config into `script.innerHTML` and appends the script to the container.
+`components/TradingViewWidget.tsx` renders the container and `hooks/useTradingViewWidget.tsx` injects the script. TradingView embeds read their config from the JSON body of the `<script>` tag, so the hook writes the config into `script.innerHTML` and appends the script to the container.
 
 The hook's effect depends on `config` by reference, and it clears and reloads the widget when that reference changes. The dashboard configs are stable module constants. The per-symbol configs in `lib/constants.ts` are functions that return a new object on each call, so memoize their result (or call them outside the render path) to avoid reloading the widget on every re-render.
 
-File names use the `Tradingview` spelling while the component is named `TradingViewWidget`. Import the file with its exact casing, because Linux and Vercel are case-sensitive.
 
 ### Shared types
 
