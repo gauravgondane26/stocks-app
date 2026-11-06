@@ -12,11 +12,59 @@ npm run build    # production build
 npm run lint     # ESLint (eslint.config.mjs, next eslint config)
 ```
 
-No test runner is configured.
+No test runner is configured (Phase 7 of the build plan adds one, likely Vitest). There is no typecheck script; use `npx tsc --noEmit`.
+
+## Project status
+
+The app (Signalist) started as a YouTube tutorial and is being extended to cover both US and Indian markets, with alerts and trade tools. It is a portfolio piece that a family member who trades also uses, so free and unofficial data sources are acceptable.
+
+`Stocks App Build Plan.md` is the roadmap and holds the task checklists. It is gitignored, so it exists only on the owner's machine and may be missing from other checkouts. Work one phase at a time, finish its "done when" line, and commit before starting the next. Update this file as each phase lands.
+
+Phases, in dependency order: 0 fixes and setup, 1 database and auth, 2 market data layer, 3 search, stock page and watchlist, 4 price alerts, 5 trade tools, 6 news, emails and digest, 7 tests and deploy. The plan's "Parked for later" items (F&O data, ICICI Breeze, an in-app Claude assistant) are out of scope.
+
+MongoDB, Better Auth, Inngest, Nodemailer, Gemini and the market data layer are planned but not in the repo yet, so paths below such as `lib/market/` won't exist until their phase. Check `package.json` before assuming a dependency is installed.
+
+## Rules for new code
+
+These come from the build plan. Older code such as the widget configs in `lib/constants.ts` predates some of them.
+
+**Safety**
+
+- The app is read-only. Never add code that places orders or stores broker credentials.
+- Trade tools are decision support that end in a plan on screen. Each panel carries a short "not financial advice, simulation not prediction, most day traders lose money" notice.
+- Free market data is delayed and unofficial. Show "delayed" wherever prices appear, and handle "data unavailable".
+
+**Server code**
+
+- Keep API keys server-side. Never add a `NEXT_PUBLIC_` variable for a data or AI key. Modules that read a key start with `import 'server-only'`.
+- Server actions read the user id from the session and validate their input. Rate-limit the expensive ones (Time Machine, scanner, search).
+- Route protection lives in the layouts: `(root)` redirects to `/sign-in` without a session, and `(auth)` redirects to `/` with one. Auth runs through server actions that call `auth.api` directly, so no `/api/auth` route is needed. Next 16 deprecates the `middleware` convention in favour of `proxy` (`proxy.ts`, Node.js runtime only), so if request interception is needed, read `node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md` first.
+
+**Markets and data**
+
+- Features get data only through the `MarketDataProvider` interface in `lib/market/`, never from Finnhub or Yahoo directly.
+- Market-specific values (hours, holidays, currency, symbol suffixes, session times) come from `lib/market/markets.ts`. Don't hardcode `NASDAQ`, `09:30` or `$` in feature code.
+- Store symbols as `{ market, exchange, ticker }` and use the converters (`toTradingView()`, `toYahoo()`) to get each service's format. Format money with `Intl.NumberFormat` for the market's locale and currency.
+- US-only rules stay out of India's path, such as the pattern-day-trader guard in the risk check.
+
+**Alerts and background jobs**
+
+- Keep rule evaluation in pure functions (`lib/alerts/evaluate.ts`) with no database or network calls.
+- An alert rings once. Update it with a condition on `status: active`, and send the email only if that update changed a document, so overlapping runs can't send twice.
+- Digests fan out one event per user, so a failed email doesn't stop the rest.
+
+**Porting and the tutorial**
+
+- Before porting from `Jakeschincariol/day-trader-skill`, read the matching `SKILL.md` and Python script, because the exact thresholds live there. Ported code and copied fixtures keep the MIT notice and a credit comment.
+- Don't copy these from the tutorial: its Radix components (it targets Next 15, this repo doesn't use Radix), its `NEXT_PUBLIC_FINNHUB_API_KEY` fallback, its hardcoded sender address, or its `middleware/index.ts`, which would cause a redirect loop if it were active.
+
+**Open questions for the owner**
+
+Ask rather than guess: the Indian flat-by time, and which Indian sectors to offer in the sign-up form.
 
 ## Stack
 
-- **Next.js 16.2.6** with App Router — read `node_modules/next/dist/docs/01-app/` before touching routing or data-fetching APIs
+- **Next.js 16.4.5** with App Router — read `node_modules/next/dist/docs/01-app/` before touching routing or data-fetching APIs
 - **React 19** — use `use client` only when hooks or browser APIs are needed
 - **Tailwind CSS v4** — config lives entirely in `globals.css` via `@theme`/`@layer`, not `tailwind.config.*`
 - **Base UI** (`@base-ui/react`) as the headless primitive layer — `components/ui/` wraps these with CVA variants (NOT Radix UI)
@@ -34,15 +82,30 @@ app/
   (root)/
     layout.tsx        # Main shell: renders <Header /> + <div className="container">
     page.tsx          # Dashboard (/)
+  (auth)/
+    layout.tsx        # Two-column auth shell: form on the left, testimonial and preview on the right
+    sign-in/, sign-up/
 ```
 
-The `(root)` route group wraps all authenticated pages. Future routes (`/search`, `/watchlist`) go inside `(root)/`.
+The `(root)` route group is for pages that will require a session, and `(auth)` is for the sign-in and sign-up pages. No session guard exists yet (Phase 1 of the plan adds it to these layouts). Future routes (`/search`, `/watchlist`) go inside `(root)/`. `/search` is already in `NAV_ITEMS` but has no page yet.
 
 ### Components
 
 `components/ui/` holds Base UI primitives styled with CVA — treat them like shadcn components. `NavItems` and `UserDropdown` are `"use client"` because they use `usePathname`/`useRouter`.
 
-`lib/constants.ts` holds `NAV_ITEMS`; add new nav entries there.
+`lib/constants.ts` holds `NAV_ITEMS`, the sign-up form options, the TradingView widget configs and `POPULAR_STOCK_SYMBOLS`.
+
+### TradingView widgets
+
+`components/TradingviewWidget.tsx` renders the container and `hooks/useTradingviewWidget.tsx` injects the script. TradingView embeds read their config from the JSON body of the `<script>` tag, so the hook writes the config into `script.innerHTML` and appends the script to the container.
+
+The hook's effect depends on `config` by reference, and it clears and reloads the widget when that reference changes. The dashboard configs are stable module constants. The per-symbol configs in `lib/constants.ts` are functions that return a new object on each call, so memoize their result (or call them outside the render path) to avoid reloading the widget on every re-render.
+
+File names use the `Tradingview` spelling while the component is named `TradingViewWidget`. Import the file with its exact casing, because Linux and Vercel are case-sensitive.
+
+### Shared types
+
+`types/global.d.ts` declares ambient types in `declare global` (form data, field props, `Stock`), so they are used without imports. `skipLibCheck` is on, so `tsc` doesn't report errors inside this file: `Control`, `FieldError` and the other `react-hook-form` types it references aren't imported, and won't be checked until they are.
 
 ### Styling conventions
 
@@ -50,7 +113,7 @@ All reusable utility classes (`.header`, `.yellow-btn`, `.form-input`, etc.) are
 
 Dark mode is **always on** — the `.dark` class is hardcoded on `<html>`. The app's background is `bg-gray-900` (#050505).
 
-TradingView widget CSS is already present in `globals.css`; widget components embed iframes against `#141414` background.
+TradingView widget CSS is already present in `globals.css`. Widget configs in `lib/constants.ts` set a `#141414` background, the one place raw hex is expected, since those values go to TradingView rather than Tailwind.
 
 ### Assets
 
