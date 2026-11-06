@@ -84,6 +84,7 @@ declare global {
     id: string;
     name: string;
     email: string;
+    country: string;
   };
 
   type Stock = {
