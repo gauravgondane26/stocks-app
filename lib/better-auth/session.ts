@@ -12,8 +12,8 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
 
-  const { id, name, email } = session.user;
-  return { id, name, email };
+  const { id, name, email, country } = session.user;
+  return { id, name, email, country };
 });
 
 // Layouts don't re-render on client-side navigation, so every protected page

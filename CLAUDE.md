@@ -22,7 +22,7 @@ The app (OpenWatch, renamed from the tutorial's Signalist) started as a YouTube 
 
 Phases, in dependency order: 0 fixes and setup, 1 database and auth, 2 market data layer, 3 search, stock page and watchlist, 4 price alerts, 5 trade tools, 6 news, emails and digest, 7 tests and deploy. The plan's "Parked for later" items (F&O data, ICICI Breeze, an in-app Claude assistant) are out of scope.
 
-Inngest, Nodemailer, Gemini and the market data layer are planned but not in the repo yet, so paths below such as `lib/market/` will not exist until their phase. Check `package.json` before assuming a dependency is installed.
+Inngest, Nodemailer and Gemini are planned but not in the repo yet. Check `package.json` before assuming a dependency is installed.
 
 ## Rules for new code
 
@@ -44,7 +44,11 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 
 **Markets and data**
 
-- Features get data only through the `MarketDataProvider` interface in `lib/market/`, never from Finnhub or Yahoo directly.
+- Features get data only through `getMarketData(market)` in `lib/market/index.ts`, never from Finnhub or Yahoo directly. Results are `{ ok: true, data }` or `{ ok: false, reason }`, so handle failure as a normal case. The free Finnhub key covers US search, profile and news only: Yahoo supplies quotes and bars for both markets, and India search uses `lib/market/data/nse-symbols.json` (refresh it with `node scripts/seed-nse-symbols.mjs`).
+- Call data sources with the honest `User-Agent` in `lib/market/http.ts`. Don't add browser disguises or session-cookie tricks to reach an endpoint.
+- TradingView embeds refuse NSE symbols, so `toTradingView()` returns the BSE listing for Indian stocks. Yahoo still uses `.NS`, so widget prices can differ slightly from quotes. Check new Indian widget symbols in a browser, because a bad one only shows an error at runtime.
+- Yahoo's `chartPreviousClose` can be wrong, so `yahooProvider.quote` works out the previous close from daily bars.
+- `getCurrentMarket()` in `lib/market/current.ts` returns the active market (cookie, then sign-up country). Holiday data in `lib/market/holidays.ts` is copied from exchange sites: NSE is only published through 2026, and `hasHolidayData()` turns false once a calendar runs out.
 - Market-specific values (hours, holidays, currency, symbol suffixes, session times) come from `lib/market/markets.ts`. Don't hardcode `NASDAQ`, `09:30` or `$` in feature code.
 - Store symbols as `{ market, exchange, ticker }` and use the converters (`toTradingView()`, `toYahoo()`) to get each service's format. Format money with `Intl.NumberFormat` for the market's locale and currency.
 - US-only rules stay out of India's path, such as the pattern-day-trader guard in the risk check.
