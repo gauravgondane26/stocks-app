@@ -8,8 +8,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <Link href="/" className="auth-logo">
           <Image
             src="/assets/icons/logo.svg"
-            alt="Signalist logo"
-            width={140}
+            alt="OpenWatch logo"
+            width={191}
             height={32}
             className="h-8 w-auto"
           />
@@ -19,7 +19,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <section className="auth-right-section">
         <div className="z-10 relative lg:mt-4 lg:mb-16">
           <blockquote className="auth-blockquote">
-            Signalist turned my watchlist into a winning list. The alerts are
+            OpenWatch turned my watchlist into a winning list. The alerts are
             spot-on, and I feel more confident making moves in the market
           </blockquote>
           <div className="flex items-center justify-between">

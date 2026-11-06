@@ -16,7 +16,7 @@ No test runner is configured (Phase 7 of the build plan adds one, likely Vitest)
 
 ## Project status
 
-The app (Signalist) started as a YouTube tutorial and is being extended to cover both US and Indian markets, with alerts and trade tools. It is a portfolio piece that a family member who trades also uses, so free and unofficial data sources are acceptable.
+The app (OpenWatch, renamed from the tutorial's Signalist) started as a YouTube tutorial and is being extended to cover both US and Indian markets, with alerts and trade tools. It is a portfolio piece that a family member who trades also uses, so free and unofficial data sources are acceptable.
 
 `Stocks App Build Plan.md` is the roadmap and holds the task checklists. It is gitignored, so it exists only on the owner's machine and may be missing from other checkouts. Work one phase at a time, finish its "done when" line, and commit before starting the next. Update this file as each phase lands.
 

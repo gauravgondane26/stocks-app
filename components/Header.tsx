@@ -10,8 +10,8 @@ const Header = () => {
         <Link href="/">
           <Image
             src="/assets/icons/logo.svg"
-            alt="Signalist logo"
-            width={140}
+            alt="OpenWatch logo"
+            width={191}
             height={32}
             className="h-8 w-auto cursor-pointer"
           />
