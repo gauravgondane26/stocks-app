@@ -21,7 +21,6 @@ const Header = () => {
         </nav>
         <UserDropdown />
       </div>
-      Header
     </header>
   );
 };
