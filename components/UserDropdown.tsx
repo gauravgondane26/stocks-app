@@ -12,11 +12,19 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
+import MarketSwitcher from "@/components/MarketSwitcher";
 import NavItems from "@/components/NavItems";
 import { signOut } from "@/lib/actions/auth.actions";
+import type { MarketId } from "@/lib/market/types";
 import { getInitials } from "@/lib/utils";
 
-const UserDropdown = ({ user }: { user: User }) => {
+const UserDropdown = ({
+  user,
+  market,
+}: {
+  user: User;
+  market: MarketId;
+}) => {
   const initials = getInitials(user.name);
 
   const handleSignOut = async () => {
@@ -76,6 +84,9 @@ const UserDropdown = ({ user }: { user: User }) => {
         <nav className="sm:hidden">
           <NavItems />
         </nav>
+        <div className="px-2 py-2 md:hidden">
+          <MarketSwitcher market={market} />
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

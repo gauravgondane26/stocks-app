@@ -1,25 +1,29 @@
 import TradingViewWidget from "@/components/TradingViewWidget";
 import { requireUser } from "@/lib/better-auth/session";
-import {
-  HEATMAP_WIDGET_CONFIG,
-  MARKET_DATA_WIDGET_CONFIG,
-  MARKET_OVERVIEW_WIDGET_CONFIG,
-  TOP_STORIES_WIDGET_CONFIG,
-} from "@/lib/constants";
+import { getCurrentMarket } from "@/lib/market/current";
+import { getDashboardConfig } from "@/lib/market/dashboard";
 
 const Home = async () => {
   await requireUser();
 
+  const market = await getCurrentMarket();
+  const { overview, heatmap, topStories, quotes } = getDashboardConfig(market);
+
   const scriptUrl =
     "https://s3.tradingview.com/external-embedding/embed-widget-";
   return (
-    <div className="flex min-h-screen home-wrapper">
+    // The key replaces the widgets on a market switch, since each one only reads
+    // its config when its script loads.
+    <div key={market} className="flex min-h-screen home-wrapper">
+      <p className="w-full pb-6 text-sm text-gray-500">
+        Market data may be delayed and is for information only.
+      </p>
       <section className="grid w-full gap-8 home-section">
         <div className="md:col-span-1 xl:col-span-1">
           <TradingViewWidget
             title="Market Overview"
             scriptUrl={`${scriptUrl}market-overview.js`}
-            config={MARKET_OVERVIEW_WIDGET_CONFIG}
+            config={overview}
             className="custom-chart"
             height={600}
           />
@@ -28,7 +32,7 @@ const Home = async () => {
           <TradingViewWidget
             title="Stock Heatmap"
             scriptUrl={`${scriptUrl}stock-heatmap.js`}
-            config={HEATMAP_WIDGET_CONFIG}
+            config={heatmap}
             height={600}
           />
         </div>
@@ -37,7 +41,7 @@ const Home = async () => {
         <div className="h-full md:col-span-1 xl:col-span-1">
           <TradingViewWidget
             scriptUrl={`${scriptUrl}timeline.js`}
-            config={TOP_STORIES_WIDGET_CONFIG}
+            config={topStories}
             className="custom-chart"
             height={600}
           />
@@ -45,7 +49,7 @@ const Home = async () => {
         <div className="h-full md:col-span-1 xl:col-span-2">
           <TradingViewWidget
             scriptUrl={`${scriptUrl}market-quotes.js`}
-            config={MARKET_DATA_WIDGET_CONFIG}
+            config={quotes}
             height={600}
           />
         </div>

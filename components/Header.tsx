@@ -1,9 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getCurrentMarket } from "@/lib/market/current";
+import MarketSwitcher from "./MarketSwitcher";
 import NavItems from "./NavItems";
 import UserDropdown from "./UserDropdown";
 
-const Header = ({ user }: { user: User }) => {
+const Header = async ({ user }: { user: User }) => {
+  const market = await getCurrentMarket();
+
   return (
     <header className="sticky top-0 header">
       <div className="container header-wrapper">
@@ -19,7 +23,11 @@ const Header = ({ user }: { user: User }) => {
         <nav className="hidden sm:block">
           <NavItems />
         </nav>
-        <UserDropdown user={user} />
+        <div className="flex items-center gap-4">
+          {/* Below md there isn't room, so it moves into the user menu. */}
+          <MarketSwitcher market={market} className="hidden md:inline-flex" />
+          <UserDropdown user={user} market={market} />
+        </div>
       </div>
     </header>
   );
