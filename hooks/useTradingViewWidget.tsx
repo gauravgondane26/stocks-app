@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const useTradingviewWidget = (
+const useTradingViewWidget = (
   scriptUrl: string,
   config: Record<string, unknown>,
   height = 600,
@@ -34,4 +34,4 @@ const useTradingviewWidget = (
   return containerRef;
 };
 
-export default useTradingviewWidget;
+export default useTradingViewWidget;

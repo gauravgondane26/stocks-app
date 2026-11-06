@@ -1,6 +1,6 @@
 "use client";
 
-import useTradingviewWidget from "@/hooks/useTradingviewWidget";
+import useTradingViewWidget from "@/hooks/useTradingViewWidget";
 import { cn } from "@/lib/utils";
 import { memo } from "react";
 
@@ -19,7 +19,7 @@ const TradingViewWidget = ({
   height = 600,
   className,
 }: TradingViewWidgetProps) => {
-  const containerRef = useTradingviewWidget(scriptUrl, config, height);
+  const containerRef = useTradingViewWidget(scriptUrl, config, height);
 
   return (
     <div className="w-full">
