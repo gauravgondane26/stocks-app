@@ -22,7 +22,7 @@ The app (OpenWatch, renamed from the tutorial's Signalist) started as a YouTube 
 
 Phases, in dependency order: 0 fixes and setup, 1 database and auth, 2 market data layer, 3 search, stock page and watchlist, 4 price alerts, 5 trade tools, 6 news, emails and digest, 7 tests and deploy. The plan's "Parked for later" items (F&O data, ICICI Breeze, an in-app Claude assistant) are out of scope.
 
-MongoDB, Better Auth, Inngest, Nodemailer, Gemini and the market data layer are planned but not in the repo yet, so paths below such as `lib/market/` won't exist until their phase. Check `package.json` before assuming a dependency is installed.
+Inngest, Nodemailer, Gemini and the market data layer are planned but not in the repo yet, so paths below such as `lib/market/` will not exist until their phase. Check `package.json` before assuming a dependency is installed.
 
 ## Rules for new code
 
@@ -38,7 +38,9 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 
 - Keep API keys server-side. Never add a `NEXT_PUBLIC_` variable for a data or AI key. Modules that read a key start with `import 'server-only'`.
 - Server actions read the user id from the session and validate their input. Rate-limit the expensive ones (Time Machine, scanner, search).
-- Route protection lives in the layouts: `(root)` redirects to `/sign-in` without a session, and `(auth)` redirects to `/` with one. Auth runs through server actions that call `auth.api` directly, so no `/api/auth` route is needed. Next 16 deprecates the `middleware` convention in favour of `proxy` (`proxy.ts`, Node.js runtime only), so if request interception is needed, read `node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md` first.
+- Protect routes through `lib/better-auth/session.ts`: `getCurrentUser()` returns the user or null, and `requireUser()` redirects to `/sign-in`. `(root)/layout.tsx` calls `requireUser()`, and `(auth)/layout.tsx` redirects to `/` when there is a session. Layouts don't re-render on client-side navigation, so every protected page must also call `requireUser()` itself. Auth runs through server actions that call `auth.api` directly, so no `/api/auth` route is needed. There is deliberately no `proxy.ts` (Next 16's replacement for `middleware`); before adding one, read `node_modules/next/dist/docs/01-app/02-guides/authentication.md`.
+- Better Auth's Mongo adapter does not create indexes for its fields, so `ensureAuthIndexes` in `lib/better-auth/auth.ts` does. Add to it if a new auth field needs one.
+- Get the auth instance with `await getAuth()` from `lib/better-auth/auth.ts`, and the database with `connectToDatabase()` from `database/mongoose.ts`. Both connect on first use, so `next build` never needs a database. Secrets live in `.env.local` (see `.env.example`).
 
 **Markets and data**
 
@@ -87,7 +89,7 @@ app/
     sign-in/, sign-up/
 ```
 
-The `(root)` route group is for pages that will require a session, and `(auth)` is for the sign-in and sign-up pages. No session guard exists yet (Phase 1 of the plan adds it to these layouts). Future routes (`/search`, `/watchlist`) go inside `(root)/`. `/search` is already in `NAV_ITEMS` but has no page yet.
+The `(root)` route group is for pages that will require a session, and `(auth)` is for the sign-in and sign-up pages. Future routes (`/search`, `/watchlist`) go inside `(root)/`. `/search` is already in `NAV_ITEMS` but has no page yet.
 
 ### Components
 
