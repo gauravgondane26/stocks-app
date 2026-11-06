@@ -1,4 +1,17 @@
+import type {
+  Control,
+  FieldError,
+  FieldValues,
+  Path,
+  RegisterOptions,
+  UseFormRegister,
+} from "react-hook-form";
+
 declare global {
+  type AuthActionError = {
+    error: string;
+  };
+
   type SignInFormData = {
     email: string;
     password: string;
@@ -14,24 +27,24 @@ declare global {
     preferredIndustry: string;
   };
 
-  type CountrySelectProps = {
-    name: string;
+  type CountrySelectProps<T extends FieldValues> = {
+    name: Path<T>;
     label: string;
-    control: Control;
+    control: Control<T>;
     error?: FieldError;
     required?: boolean;
   };
 
-  type FormInputProps = {
-    name: string;
+  type FormInputProps<T extends FieldValues> = {
+    name: Path<T>;
     label: string;
     placeholder: string;
     type?: string;
-    register: UseFormRegister;
+    register: UseFormRegister<T>;
     error?: FieldError;
-    validation?: RegisterOptions;
+    validation?: RegisterOptions<T, Path<T>>;
     disabled?: boolean;
-    value?: string;
+    autoComplete?: string;
   };
 
   type Option = {
@@ -39,12 +52,12 @@ declare global {
     label: string;
   };
 
-  type SelectFieldProps = {
-    name: string;
+  type SelectFieldProps<T extends FieldValues> = {
+    name: Path<T>;
     label: string;
     placeholder: string;
     options: readonly Option[];
-    control: Control;
+    control: Control<T>;
     error?: FieldError;
     required?: boolean;
   };
