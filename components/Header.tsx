@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentMarket } from "@/lib/market/current";
 import MarketSwitcher from "./MarketSwitcher";
 import NavItems from "./NavItems";
+import SearchCommand from "./SearchCommand";
 import UserDropdown from "./UserDropdown";
 
 const Header = async ({ user }: { user: User }) => {
@@ -29,6 +30,7 @@ const Header = async ({ user }: { user: User }) => {
           <UserDropdown user={user} market={market} />
         </div>
       </div>
+      <SearchCommand />
     </header>
   );
 };
