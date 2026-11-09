@@ -15,6 +15,9 @@ export type MarketConfig = {
   currency: string;
   locale: string;
   defaultExchange: string;
+  // The exchange to assume before a profile lookup says which one a ticker is on.
+  // US search can't tell NASDAQ from NYSE, so "US" stays unresolved on purpose.
+  unresolvedExchange: string;
   exchanges: readonly ExchangeConfig[];
 };
 
@@ -28,6 +31,7 @@ export const MARKETS: Record<MarketId, MarketConfig> = {
     currency: "USD",
     locale: "en-US",
     defaultExchange: "NASDAQ",
+    unresolvedExchange: "US",
     exchanges: [
       { code: "NASDAQ", tradingViewPrefix: "NASDAQ", yahooSuffix: "" },
       { code: "NYSE", tradingViewPrefix: "NYSE", yahooSuffix: "" },
@@ -43,6 +47,7 @@ export const MARKETS: Record<MarketId, MarketConfig> = {
     currency: "INR",
     locale: "en-IN",
     defaultExchange: "NSE",
+    unresolvedExchange: "NSE",
     exchanges: [
       // TradingView embeds refuse NSE symbols ("only available on TradingView"), but
       // BSE works and big companies share a ticker, so widgets show the BSE listing.
