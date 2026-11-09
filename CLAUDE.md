@@ -41,12 +41,16 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 - Protect routes through `lib/better-auth/session.ts`: `getCurrentUser()` returns the user or null, and `requireUser()` redirects to `/sign-in`. `(root)/layout.tsx` calls `requireUser()`, and `(auth)/layout.tsx` redirects to `/` when there is a session. Layouts don't re-render on client-side navigation, so every protected page must also call `requireUser()` itself. Auth runs through server actions that call `auth.api` directly, so no `/api/auth` route is needed. There is deliberately no `proxy.ts` (Next 16's replacement for `middleware`); before adding one, read `node_modules/next/dist/docs/01-app/02-guides/authentication.md`.
 - Better Auth's Mongo adapter does not create indexes for its fields, so `ensureAuthIndexes` in `lib/better-auth/auth.ts` does. Add to it if a new auth field needs one.
 - Get the auth instance with `await getAuth()` from `lib/better-auth/auth.ts`, and the database with `connectToDatabase()` from `database/mongoose.ts`. Both connect on first use, so `next build` never needs a database. Secrets live in `.env.local` (see `.env.example`).
+- `bufferCommands` is off, so Mongoose models are compiled after connecting, behind an async getter such as `getWatchlistModel()` in `database/models/watchlist.model.ts`. It also awaits `model.init()` so unique indexes exist before the first write.
+- Functions that take a user id, like those in `lib/watchlist.ts`, must never be exported from a `"use server"` file, because any client could call them with someone else's id. Actions get the id from the session and call them.
+- `allowRequest` in `lib/rate-limit.ts` is a per-instance, in-memory limit. It stops runaway clients but isn't an exact quota on serverless hosting.
 
 **Markets and data**
 
 - Features get data only through `getMarketData(market)` in `lib/market/index.ts`, never from Finnhub or Yahoo directly. Results are `{ ok: true, data }` or `{ ok: false, reason }`, so handle failure as a normal case. The free Finnhub key covers US search, profile and news only: Yahoo supplies quotes and bars for both markets, and India search uses `lib/market/data/nse-symbols.json` (refresh it with `node scripts/seed-nse-symbols.mjs`).
 - Call data sources with the honest `User-Agent` in `lib/market/http.ts`. Don't add browser disguises or session-cookie tricks to reach an endpoint.
-- TradingView embeds refuse NSE symbols, so `toTradingView()` returns the BSE listing for Indian stocks. Yahoo still uses `.NS`, so widget prices can differ slightly from quotes. Check new Indian widget symbols in a browser, because a bad one only shows an error at runtime.
+- TradingView embeds refuse NSE symbols, so `toTradingView()` returns the BSE listing for Indian stocks. Yahoo still uses `.NS`, so widget prices can differ slightly from quotes. It also rewrites `&` and `-` as `_`, TradingView's spelling (`M_M`, `BAJAJ_AUTO`). Check new Indian widget symbols in a browser, because a bad one only shows an error at runtime. `getChartListing()` in `lib/market/charts.ts` hides the widgets when a stock has no BSE listing.
+- Free sources have no Indian market cap or P/E, so those fields are null and show a dash.
 - Yahoo's `chartPreviousClose` can be wrong, so `yahooProvider.quote` works out the previous close from daily bars.
 - `getCurrentMarket()` in `lib/market/current.ts` returns the active market (cookie, then sign-up country). Holiday data in `lib/market/holidays.ts` is copied from exchange sites: NSE is only published through 2026, and `hasHolidayData()` turns false once a calendar runs out.
 - Market-specific values (hours, holidays, currency, symbol suffixes, session times) come from `lib/market/markets.ts`. Don't hardcode `NASDAQ`, `09:30` or `$` in feature code.
@@ -88,29 +92,35 @@ app/
   (root)/
     layout.tsx        # Main shell: renders <Header /> + <div className="container">
     page.tsx          # Dashboard (/)
+    stocks/[market]/[ticker]/page.tsx  # Stock page, link to it with stockPath()
+    watchlist/page.tsx                 # Watchlist for the active market
   (auth)/
     layout.tsx        # Two-column auth shell: form on the left, testimonial and preview on the right
     sign-in/, sign-up/
 ```
 
-The `(root)` route group is for pages that will require a session, and `(auth)` is for the sign-in and sign-up pages. Future routes (`/search`, `/watchlist`) go inside `(root)/`. `/search` is already in `NAV_ITEMS` but has no page yet.
+The `(root)` route group is for pages that will require a session, and `(auth)` is for the sign-in and sign-up pages. Future protected routes go inside `(root)/`. `/search` in `NAV_ITEMS` is not a page: `NavItems` renders it as a button that opens the search dialog.
 
 ### Components
 
 `components/ui/` holds Base UI primitives styled with CVA — treat them like shadcn components. `NavItems` and `UserDropdown` are `"use client"` because they use `usePathname`/`useRouter`.
 
-`lib/constants.ts` holds `NAV_ITEMS`, the sign-up form options, the TradingView widget configs and `POPULAR_STOCK_SYMBOLS`.
+`SearchCommand` is mounted once, in `Header`. Open it from anywhere with `openSearch()` in `lib/search-events.ts`, not with a second instance: a dialog inside the mobile menu would unmount when the menu closes.
+
+`npx shadcn add` currently writes `import { cn } from "cn"` and installs an unrelated `cn` package. Remove the package and point new components at `@/lib/utils`. It also prompts to overwrite `button.tsx` and `input.tsx`, which should stay as they are.
+
+`lib/constants.ts` holds `NAV_ITEMS`, the sign-up form options and the TradingView widget configs. Popular stocks for the empty search box are in `lib/market/popular.ts`.
 
 ### TradingView widgets
 
 `components/TradingViewWidget.tsx` renders the container and `hooks/useTradingViewWidget.tsx` injects the script. TradingView embeds read their config from the JSON body of the `<script>` tag, so the hook writes the config into `script.innerHTML` and appends the script to the container.
 
-The hook's effect depends on `config` by reference, and it clears and reloads the widget when that reference changes. The dashboard configs are stable module constants. The per-symbol configs in `lib/constants.ts` are functions that return a new object on each call, so memoize their result (or call them outside the render path) to avoid reloading the widget on every re-render.
+The hook's effect depends on `config` by reference, and it clears and reloads the widget when that reference changes. The dashboard configs are stable module constants. The per-symbol configs in `lib/constants.ts` are functions that return a new object on each call, so memoize their result (or call them outside the render path) to avoid reloading the widget on every re-render. `components/StockWidgets.tsx` memoizes on the symbol string, because configs built on the server would be new objects after every `revalidatePath`.
 
 
 ### Shared types
 
-`types/global.d.ts` declares ambient types in `declare global` (form data, field props, `Stock`), so they are used without imports. `skipLibCheck` is on, so `tsc` doesn't report errors inside this file: `Control`, `FieldError` and the other `react-hook-form` types it references aren't imported, and won't be checked until they are.
+`types/global.d.ts` declares ambient types in `declare global` (form data, field props, `SearchStock`, `WatchlistEntry`), so they are used without imports. `skipLibCheck` is on, so `tsc` doesn't report errors inside this file: `Control`, `FieldError` and the other `react-hook-form` types it references aren't imported, and won't be checked until they are.
 
 ### Styling conventions
 
