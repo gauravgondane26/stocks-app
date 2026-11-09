@@ -197,6 +197,7 @@ export const yahooProvider: Pick<
         currency: meta?.currency ?? null,
         industry: null,
         marketCap: null,
+        peRatio: null,
         logoUrl: null,
         websiteUrl: null,
       },

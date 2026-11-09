@@ -31,6 +31,10 @@ type FinnhubProfile = {
   weburl?: string;
 };
 
+type FinnhubMetrics = {
+  metric?: { peTTM?: number | null };
+};
+
 type FinnhubNews = {
   headline: string;
   summary: string;
@@ -80,7 +84,11 @@ export const finnhubProvider: Pick<
 
       stocks.push({
         // Finnhub search doesn't say which exchange, see toTradingView.
-        symbol: { market: "US", exchange: "US", ticker: symbol },
+        symbol: {
+          market: "US",
+          exchange: MARKETS.US.unresolvedExchange,
+          ticker: symbol,
+        },
         name: description,
       });
     }
@@ -89,10 +97,11 @@ export const finnhubProvider: Pick<
   },
 
   async profile(symbol): Promise<MarketDataResult<CompanyProfile>> {
-    const result = await request<FinnhubProfile>(
-      `/stock/profile2?symbol=${encodeURIComponent(symbol.ticker)}`,
-      86_400,
-    );
+    const ticker = encodeURIComponent(symbol.ticker);
+    const [result, metrics] = await Promise.all([
+      request<FinnhubProfile>(`/stock/profile2?symbol=${ticker}`, 86_400),
+      request<FinnhubMetrics>(`/stock/metric?symbol=${ticker}&metric=all`, 86_400),
+    ]);
     if (!result.ok) return result;
 
     const { name, currency, exchange, finnhubIndustry, marketCapitalization, logo, weburl } =
@@ -115,6 +124,8 @@ export const finnhubProvider: Pick<
         // Finnhub reports market cap in millions.
         marketCap:
           marketCapitalization == null ? null : marketCapitalization * 1_000_000,
+        // A failed metrics call only costs this one field, not the whole profile.
+        peRatio: metrics.ok ? (metrics.data.metric?.peTTM ?? null) : null,
         logoUrl: logo || null,
         websiteUrl: weburl || null,
       },

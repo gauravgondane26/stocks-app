@@ -45,6 +45,7 @@ export type CompanyProfile = {
   currency: string | null;
   industry: string | null;
   marketCap: number | null;
+  peRatio: number | null;
   logoUrl: string | null;
   websiteUrl: string | null;
 };
