@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import CreateAlertButton from "@/components/CreateAlertButton";
 import StockWidgets from "@/components/StockWidgets";
+import TradePlanPanel from "@/components/TradePlanPanel";
 import WatchlistButton from "@/components/WatchlistButton";
 import { isInWatchlist } from "@/lib/actions/watchlist.actions";
 import { requireUser } from "@/lib/better-auth/session";
@@ -9,6 +10,7 @@ import { getMarketData } from "@/lib/market";
 import { getChartListing } from "@/lib/market/charts";
 import { formatMoney, formatPercent } from "@/lib/market/format";
 import { symbolFromRoute, toTradingView } from "@/lib/market/symbols";
+import { loadTradePlan } from "@/lib/trade/load";
 
 type StockPageProps = {
   params: Promise<{ market: string; ticker: string }>;
@@ -41,7 +43,10 @@ const StockPage = async ({ params }: StockPageProps) => {
   // The profile is what tells NASDAQ from NYSE.
   const symbol = profile.ok ? profile.data.symbol : routeSymbol;
   const company = profile.ok ? profile.data.name : symbol.ticker;
-  const chartListing = await getChartListing(symbol);
+  const [chartListing, tradePlan] = await Promise.all([
+    getChartListing(symbol),
+    loadTradePlan(symbol, quote),
+  ]);
   const changePercent = quote.ok ? quote.data.changePercent : null;
 
   return (
@@ -89,6 +94,14 @@ const StockPage = async ({ params }: StockPageProps) => {
           />
         </div>
       </section>
+
+      {/* Keyed so moving to another stock starts a fresh plan. */}
+      <TradePlanPanel
+        key={`${symbol.market}:${symbol.ticker}`}
+        market={symbol.market}
+        ticker={symbol.ticker}
+        {...tradePlan}
+      />
 
       {chartListing.available ? (
         <>

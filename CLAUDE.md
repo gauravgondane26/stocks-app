@@ -70,7 +70,7 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 
 **Open questions for the owner**
 
-Ask rather than guess: the Indian flat-by time, and which Indian sectors to offer in the sign-up form.
+Ask rather than guess: which Indian sectors to offer in the sign-up form. (The Indian flat-by time is settled: 15:15, in `MARKETS.IN.tradeDefaults`.)
 
 ## Stack
 
