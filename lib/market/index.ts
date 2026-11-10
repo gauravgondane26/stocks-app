@@ -11,6 +11,7 @@ const PROVIDERS: Record<MarketId, MarketDataProvider> = {
     quote: yahooProvider.quote,
     bars: yahooProvider.bars,
     profile: finnhubProvider.profile,
+    closeSeries: yahooProvider.closeSeries,
     news: finnhubProvider.news,
   },
   IN: {
@@ -18,6 +19,7 @@ const PROVIDERS: Record<MarketId, MarketDataProvider> = {
     quote: yahooProvider.quote,
     bars: yahooProvider.bars,
     profile: yahooProvider.profile,
+    closeSeries: yahooProvider.closeSeries,
     // Phase 6 chooses an Indian news source.
     news: async () => ({ ok: false, reason: "not_supported" }),
   },

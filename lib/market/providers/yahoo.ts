@@ -5,6 +5,7 @@ import { MARKETS } from "@/lib/market/markets";
 import { toYahoo } from "@/lib/market/symbols";
 import type {
   Bar,
+  CloseSeries,
   BarRequest,
   CompanyProfile,
   MarketDataProvider,
@@ -44,6 +45,24 @@ type ChartResponse = {
           indicators?: { quote?: ChartQuote[] };
         }[]
       | null;
+  };
+};
+
+const SPARK_URL = "https://query1.finance.yahoo.com/v7/finance/spark";
+// Yahoo's spark endpoint answers 400 above 20 symbols.
+const SPARK_MAX_SYMBOLS = 20;
+const SPARK_PAUSE_MS = 300;
+
+type SparkResponse = {
+  spark?: {
+    result?: {
+      symbol: string;
+      response?: {
+        meta?: ChartMeta;
+        timestamp?: number[];
+        indicators?: { quote?: { close?: (number | null)[] }[] };
+      }[];
+    }[];
   };
 };
 
@@ -118,8 +137,50 @@ const findPreviousClose = (
 
 export const yahooProvider: Pick<
   MarketDataProvider,
-  "quote" | "bars" | "profile"
+  "quote" | "bars" | "profile" | "closeSeries"
 > = {
+  // 20 stocks a request with a short pause between, the way the day-trader skill does.
+  async closeSeries(symbols, request): Promise<MarketDataResult<Record<string, CloseSeries>>> {
+    const series: Record<string, CloseSeries> = {};
+    let anyRequestWorked = false;
+
+    for (let start = 0; start < symbols.length; start += SPARK_MAX_SYMBOLS) {
+      if (start > 0) {
+        await new Promise((resolve) => setTimeout(resolve, SPARK_PAUSE_MS));
+      }
+      const batch = symbols.slice(start, start + SPARK_MAX_SYMBOLS);
+      const tickers = new Map(batch.map((symbol) => [toYahoo(symbol), symbol.ticker]));
+      const result = await fetchJson<SparkResponse>(
+        `${SPARK_URL}?symbols=${[...tickers.keys()].map(encodeURIComponent).join(",")}&range=${request.range}&interval=${request.interval}`,
+        { revalidate: REVALIDATE_SECONDS[request.interval], source: "Yahoo spark" },
+      );
+      if (!result.ok) continue;
+      anyRequestWorked = true;
+
+      for (const item of result.data.spark?.result ?? []) {
+        const ticker = tickers.get(item.symbol);
+        const response = item.response?.[0];
+        if (!ticker || !response) continue;
+
+        const closes = response.indicators?.quote?.[0]?.close ?? [];
+        const points: CloseSeries["points"] = [];
+        (response.timestamp ?? []).forEach((timestamp, index) => {
+          const close = closes[index];
+          if (close != null) points.push({ time: timestamp * 1000, close });
+        });
+        series[ticker] = {
+          points,
+          price: response.meta?.regularMarketPrice ?? null,
+          volume: response.meta?.regularMarketVolume ?? null,
+        };
+      }
+    }
+
+    return anyRequestWorked || symbols.length === 0
+      ? { ok: true, data: series }
+      : { ok: false, reason: "unavailable" };
+  },
+
   async quote(symbol): Promise<MarketDataResult<Quote>> {
     const result = await fetchChart(
       symbol,

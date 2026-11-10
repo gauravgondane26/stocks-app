@@ -1,9 +1,9 @@
 import { serve } from "inngest/next";
 
 import { inngest } from "@/lib/inngest/client";
-import { checkAlerts } from "@/lib/inngest/functions";
+import { checkAlerts, scanFunctions } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [checkAlerts],
+  functions: [checkAlerts, ...scanFunctions],
 });
