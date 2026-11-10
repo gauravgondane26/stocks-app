@@ -7,6 +7,7 @@ import type {
   UseFormRegister,
 } from "react-hook-form";
 
+import type { AlertRule, AlertStatus } from "@/lib/alerts/types";
 import type { StockSearchResult, StockSymbol } from "@/lib/market/types";
 
 declare global {
@@ -135,9 +136,19 @@ declare global {
     currentPrice?: number;
   };
 
-  type AlertsListProps = {
-    alertData: Alert[] | undefined;
+  type AlertEntry = AlertRule & {
+    id: string;
+    symbol: StockSymbol;
+    company: string;
+    label: string | null;
+    status: AlertStatus;
+    rangAt: number | null;
+    rangPrice: number | null;
   };
+
+  type AlertActionResult = { ok: true } | { ok: false; error: string };
+
+  type AlertsReadResult = { ok: true; data: AlertEntry[] } | { ok: false };
 
   type MarketNewsArticle = {
     id: number;
@@ -155,22 +166,6 @@ declare global {
     news?: MarketNewsArticle[];
   };
 
-  type AlertData = {
-    symbol: string;
-    company: string;
-    alertName: string;
-    alertType: "upper" | "lower";
-    threshold: string;
-  };
-
-  type AlertModalProps = {
-    alertId?: string;
-    alertData?: AlertData;
-    action?: string;
-    open: boolean;
-    setOpen: (open: boolean) => void;
-  };
-
   type RawNewsArticle = {
     id: number;
     headline?: string;
@@ -183,16 +178,6 @@ declare global {
     related?: string;
   };
 
-  type Alert = {
-    id: string;
-    symbol: string;
-    company: string;
-    alertName: string;
-    currentPrice: number;
-    alertType: "upper" | "lower";
-    threshold: number;
-    changePercent?: number;
-  };
 }
 
 export {};

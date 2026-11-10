@@ -19,5 +19,17 @@ export const formatCompactMoney = (value: number, market: MarketId): string => {
   }).format(value);
 };
 
+export const formatMarketDateTime = (
+  epochMs: number,
+  market: MarketId,
+): string => {
+  const { locale, timeZone } = MARKETS[market];
+  return new Intl.DateTimeFormat(locale, {
+    timeZone,
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(epochMs);
+};
+
 export const formatPercent = (value: number): string =>
   `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
