@@ -26,6 +26,11 @@ const getLocalTime = (market: MarketId, at: Date): LocalTime => {
   };
 };
 
+export const getMarketClock = (market: MarketId, at: Date = new Date()) => {
+  const { date, time } = getLocalTime(market, at);
+  return { date, time };
+};
+
 export const isTradingDay = (market: MarketId, at: Date = new Date()) => {
   const { date, weekday } = getLocalTime(market, at);
   if (weekday === "Sat" || weekday === "Sun") return false;

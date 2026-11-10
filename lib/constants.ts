@@ -27,13 +27,13 @@ export const PREFERRED_INDUSTRIES = [
 ];
 
 export const ALERT_TYPE_OPTIONS = [
-  { value: "upper", label: "Upper" },
-  { value: "lower", label: "Lower" },
-];
-
-export const CONDITION_OPTIONS = [
-  { value: "greater", label: "Greater than (>)" },
-  { value: "less", label: "Less than (<)" },
+  { value: "above", label: "Price at or above" },
+  { value: "below", label: "Price at or below" },
+  { value: "stop", label: "Stop" },
+  { value: "target", label: "Target" },
+  { value: "pct", label: "Percent move from previous close" },
+  { value: "time", label: "Time of day" },
+  { value: "opening_bell", label: "Opening bell" },
 ];
 
 // TradingView Charts
