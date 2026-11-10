@@ -19,6 +19,12 @@ export type MarketConfig = {
   // US search can't tell NASDAQ from NYSE, so "US" stays unresolved on purpose.
   unresolvedExchange: string;
   exchanges: readonly ExchangeConfig[];
+  // Defaults for the trade tools, in market time. Users can change them in Settings.
+  tradeDefaults: {
+    noEntriesBefore: string;
+    noEntriesAfter: string;
+    flatBy: string;
+  };
 };
 
 export const MARKETS: Record<MarketId, MarketConfig> = {
@@ -37,6 +43,12 @@ export const MARKETS: Record<MarketId, MarketConfig> = {
       { code: "NYSE", tradingViewPrefix: "NYSE", yahooSuffix: "" },
       { code: "AMEX", tradingViewPrefix: "AMEX", yahooSuffix: "" },
     ],
+    // The day-trader skill's defaults.
+    tradeDefaults: {
+      noEntriesBefore: "09:45",
+      noEntriesAfter: "15:30",
+      flatBy: "15:55",
+    },
   },
   IN: {
     id: "IN",
@@ -54,6 +66,13 @@ export const MARKETS: Record<MarketId, MarketConfig> = {
       { code: "NSE", tradingViewPrefix: "BSE", yahooSuffix: ".NS" },
       { code: "BSE", tradingViewPrefix: "BSE", yahooSuffix: ".BO" },
     ],
+    // The entry window keeps the US offsets: 15 minutes after the open to 30 minutes
+    // before the close. The flat-by time was chosen by the owner on 2026-11-10.
+    tradeDefaults: {
+      noEntriesBefore: "09:30",
+      noEntriesAfter: "15:00",
+      flatBy: "15:15",
+    },
   },
 };
 

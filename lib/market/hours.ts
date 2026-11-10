@@ -4,17 +4,29 @@ import type { MarketId } from "@/lib/market/types";
 
 type LocalTime = { date: string; time: string; weekday: string };
 
+// Building a formatter is slow, and the Time Machine converts thousands of bar times.
+const formatters = new Map<MarketId, Intl.DateTimeFormat>();
+
+const getFormatter = (market: MarketId) => {
+  let formatter = formatters.get(market);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: MARKETS[market].timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+      weekday: "short",
+    });
+    formatters.set(market, formatter);
+  }
+  return formatter;
+};
+
 const getLocalTime = (market: MarketId, at: Date): LocalTime => {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: MARKETS[market].timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    weekday: "short",
-  }).formatToParts(at);
+  const parts = getFormatter(market).formatToParts(at);
 
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((item) => item.type === type)?.value ?? "";
