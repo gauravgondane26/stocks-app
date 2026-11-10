@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import CreateAlertButton from "@/components/CreateAlertButton";
 import StockWidgets from "@/components/StockWidgets";
 import WatchlistButton from "@/components/WatchlistButton";
 import { isInWatchlist } from "@/lib/actions/watchlist.actions";
@@ -75,11 +76,16 @@ const StockPage = async ({ params }: StockPageProps) => {
             )}
           </div>
         </div>
-        <div className="w-full md:w-64">
+        <div className="flex w-full flex-col gap-2 md:w-64">
           <WatchlistButton
             symbol={symbol}
             company={company}
             isInWatchlist={watched}
+          />
+          <CreateAlertButton
+            symbol={symbol}
+            company={company}
+            className="w-full justify-center"
           />
         </div>
       </section>

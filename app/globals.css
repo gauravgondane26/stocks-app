@@ -275,13 +275,13 @@
     @apply text-gray-500 mb-6 max-w-md;
   }
   .watchlist-container {
-    @apply flex flex-col-reverse lg:grid lg:grid-cols-3 gap-8;
+    @apply flex flex-col lg:grid lg:grid-cols-3 gap-8;
   }
   .watchlist {
     @apply lg:col-span-2 space-y-8;
   }
   .watchlist-alerts {
-    @apply items-start gap-6 h-full flex-col w-full lg:col-span-1;
+    @apply flex items-start gap-6 h-full flex-col w-full lg:col-span-1;
   }
   .watchlist-icon-btn {
     @apply w-fit cursor-pointer hover:bg-transparent! text-gray-400 hover:text-yellow-500;
