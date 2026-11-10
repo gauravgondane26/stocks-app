@@ -18,7 +18,7 @@ const FRESH_MS = 15 * 60_000;
 export const loadTradePlan = async (
   symbol: StockSymbol,
   quote: MarketDataResult<Quote>,
-): Promise<Omit<TradePlanPanelProps, "market" | "ticker">> => {
+): Promise<Omit<TradePlanPanelProps, "market" | "ticker" | "exchange">> => {
   const now = new Date();
   const [bars, { settings, saved }] = await Promise.all([
     getMarketData(symbol.market).bars(symbol, { interval: "5m", range: "1d" }),

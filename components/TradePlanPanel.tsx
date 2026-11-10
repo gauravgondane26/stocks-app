@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import TimeMachine from "@/components/TimeMachine";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -98,6 +99,7 @@ const Field = ({
 export type TradePlanPanelProps = {
   market: MarketId;
   ticker: string;
+  exchange: string;
   entry: EntryResult;
   barsAvailable: boolean;
   settings: TradeSettings;
@@ -110,6 +112,7 @@ export type TradePlanPanelProps = {
 const TradePlanPanel = ({
   market,
   ticker,
+  exchange,
   entry,
   barsAvailable,
   settings,
@@ -136,7 +139,7 @@ const TradePlanPanel = ({
     const format = (value: number) => formatMoney(value, market);
     const session = getSessionTimes(market, clock.date);
     const entryPrice = toNumber(entryInput);
-    if (entryPrice === null) return { error: "Enter a planned entry price." };
+    if (entryPrice === null) return { prompt: "Enter a planned entry price." };
 
     const exit = computeExitPlan({
       entry: entryPrice,
@@ -297,6 +300,7 @@ const TradePlanPanel = ({
               )}
             </div>
           ) : null}
+          {"prompt" in result && <p className="text-sm text-gray-500">{result.prompt}</p>}
           {result.error && <p className="text-sm text-red-500">{result.error}</p>}
         </div>
 
@@ -350,6 +354,27 @@ const TradePlanPanel = ({
           )}
         </div>
       </div>
+
+      <TimeMachine
+        symbol={{ market, exchange, ticker }}
+        run={
+          entry.trigger && result.plan && result.flat
+            ? {
+                entry: result.plan.entry,
+                stop: result.plan.stop,
+                target: result.plan.target,
+                stopRule,
+                entryTime: entry.trigger.time,
+                until: result.flat.flatBy,
+              }
+            : null
+        }
+        unavailableReason={
+          entry.trigger
+            ? "Plan the trade above to replay it."
+            : "Runs once today's setup has triggered, since it replays from the entry bar."
+        }
+      />
 
       {!settingsSaved && (
         <p className="mt-5 text-sm text-gray-500">

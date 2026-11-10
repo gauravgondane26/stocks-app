@@ -90,7 +90,7 @@ const StockPage = async ({ params }: StockPageProps) => {
           <CreateAlertButton
             symbol={symbol}
             company={company}
-            className="w-full justify-center"
+            className="w-full! justify-center"
           />
         </div>
       </section>
@@ -100,6 +100,7 @@ const StockPage = async ({ params }: StockPageProps) => {
         key={`${symbol.market}:${symbol.ticker}`}
         market={symbol.market}
         ticker={symbol.ticker}
+        exchange={symbol.exchange}
         {...tradePlan}
       />
 
