@@ -34,6 +34,13 @@ export type BarRequest =
   | { interval: "5m"; range: "1d" | "5d" | "1mo" | "60d" }
   | { interval: "1d"; range: "1mo" | "3mo" | "6mo" | "1y" | "5y" };
 
+// Closing prices only, for scanning many stocks in a few requests.
+export type CloseSeries = {
+  points: { time: number; close: number }[];
+  price: number | null;
+  volume: number | null;
+};
+
 export type StockSearchResult = {
   symbol: StockSymbol;
   name: string;
@@ -75,5 +82,10 @@ export interface MarketDataProvider {
     request: BarRequest,
   ): Promise<MarketDataResult<Bar[]>>;
   profile(symbol: StockSymbol): Promise<MarketDataResult<CompanyProfile>>;
+  // Keyed by ticker. Stocks that failed are missing rather than failing the batch.
+  closeSeries(
+    symbols: StockSymbol[],
+    request: BarRequest,
+  ): Promise<MarketDataResult<Record<string, CloseSeries>>>;
   news(symbol: StockSymbol): Promise<MarketDataResult<NewsItem[]>>;
 }

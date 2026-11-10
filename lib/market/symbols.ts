@@ -22,11 +22,12 @@ export const toTradingView = (symbol: StockSymbol): string => {
   return exchange ? `${exchange.tradingViewPrefix}:${ticker}` : ticker;
 };
 
+// Yahoo writes a share class with a dash: BRK.B is BRK-B. Indian tickers have no dots.
 export const toYahoo = (symbol: StockSymbol): string => {
   const suffix =
     findExchange(symbol)?.yahooSuffix ??
     MARKETS[symbol.market].exchanges[0].yahooSuffix;
-  return `${symbol.ticker}${suffix}`;
+  return `${symbol.ticker.replace(/\./g, "-")}${suffix}`;
 };
 
 export const parseTicker = (value: unknown): string | null => {
