@@ -14,6 +14,11 @@ import { DAILY_SETUPS, type DailyHit, type OrbHit } from "@/lib/trade/scanner";
 import { toHHMM, toMinutes } from "@/lib/trade/session";
 import { findWatchedTickers } from "@/lib/watchlist";
 
+// "Run now" runs the scan in a server action, which takes the page's limit. A US
+// breakout scan fetches up to 200 charts and usually takes about a minute; 300 s is
+// the Vercel Hobby maximum with Fluid compute.
+export const maxDuration = 300;
+
 type LoadedScan = (ScanDocument & { createdAt: Date }) | null;
 
 const loadScans = async (market: MarketId, userId: string) => {
