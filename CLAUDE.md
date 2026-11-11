@@ -14,7 +14,7 @@ npm test           # Vitest, once; npm run test:watch to rerun on save
 npm run typecheck  # tsc --noEmit
 ```
 
-CI (`.github/workflows/ci.yml`) runs lint, test, build, then typecheck on pull requests and pushes to `main`, on Node 24.
+CI (`.github/workflows/ci.yml`) runs lint, test, build, then typecheck on pull requests and pushes to `main`, on Node 26 (what the Vercel project runs).
 
 ## Tests
 
