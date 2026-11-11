@@ -2,7 +2,8 @@
 // MIT License, Copyright (c) 2026 Jake Schincariol. Full text in lib/trade/LICENSE.
 // The skill scans every US-listed stock and filters by price and volume. Here the
 // list is bounded (an index plus watchlists), so those liquidity filters are left out.
-// Pure: no database or network.
+// One addition: the breakout scan also returns stocks whose spark data has gaps (see
+// findOrbCandidates), which the original drops. Pure: no database or network.
 
 import { getMarketClock, isTradingDay } from "@/lib/market/hours";
 import type { Bar, CloseSeries, MarketId } from "@/lib/market/types";
@@ -238,6 +239,7 @@ export const findOrbCandidates = (
 ) => {
   const counts = { requested: symbols.length, fetched: 0, unusable: 0, scanned: 0, candidates: 0 };
   const candidates: (ScanSymbol & { traded: number })[] = [];
+  const gapped: (ScanSymbol & { traded: number })[] = [];
 
   for (const symbol of symbols) {
     const data = series[symbol.ticker];
@@ -246,6 +248,12 @@ export const findOrbCandidates = (
     const bars = sessionPoints(data.points, market, window);
     if (!isUsable(bars, market, window)) {
       counts.unusable += 1;
+      // Not in the skill. Yahoo's spark endpoint drops single 5-minute bars at random,
+      // even for busy stocks, while its chart endpoint has them. Stocks with some bars
+      // are returned separately so the caller can check them with a full chart.
+      if (bars.length > 0) {
+        gapped.push({ ...symbol, traded: bars.at(-1)!.close * (data.volume ?? 0) });
+      }
       continue;
     }
     counts.scanned += 1;
@@ -256,8 +264,9 @@ export const findOrbCandidates = (
   }
 
   candidates.sort((a, b) => b.traded - a.traded);
+  gapped.sort((a, b) => b.traded - a.traded);
   counts.candidates = candidates.length;
-  return { candidates, counts };
+  return { candidates, gapped, counts };
 };
 
 // Second pass, real highs and lows: the first bar to CLOSE above the range high.

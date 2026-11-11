@@ -85,23 +85,42 @@ export const runScan = async (
 
   const series = await data.closeSeries(symbols, { interval: "5m", range: "1d" });
   if (!series.ok) return { ok: false, reason: "price data is unavailable right now" };
-  const { candidates, counts } = findOrbCandidates(series.data, universe, { market, window });
+  const { candidates, gapped, counts } = findOrbCandidates(series.data, universe, {
+    market,
+    window,
+  });
 
+  // Stocks with gaps in the spark data only get the room the clean candidates leave
+  // under the cap, so the clean candidates are checked exactly as the skill does.
   const toConfirm = candidates.slice(0, MAX_CONFIRM);
+  const gappedToCheck = gapped.slice(0, MAX_CONFIRM - toConfirm.length);
+  const queue = [
+    ...toConfirm.map((symbol) => ({ symbol, gapped: false })),
+    ...gappedToCheck.map((symbol) => ({ symbol, gapped: true })),
+  ];
+
   const hits: OrbHit[] = [];
   let failed = 0;
-  for (let start = 0; start < toConfirm.length; start += CONFIRM_BATCH_SIZE) {
+  let gappedFailed = 0;
+  let gappedHits = 0;
+  for (let start = 0; start < queue.length; start += CONFIRM_BATCH_SIZE) {
     if (start > 0) await new Promise((resolve) => setTimeout(resolve, CONFIRM_PAUSE_MS));
-    const batch = toConfirm.slice(start, start + CONFIRM_BATCH_SIZE);
+    const batch = queue.slice(start, start + CONFIRM_BATCH_SIZE);
     const results = await Promise.all(
-      batch.map((symbol) =>
+      batch.map(({ symbol }) =>
         data.bars(toSymbol(market, symbol), { interval: "5m", range: "1d" }),
       ),
     );
     results.forEach((result, index) => {
-      const hit = result.ok ? confirmOrbHit(result.data, batch[index], { market, window }) : "unusable";
-      if (hit === "unusable") failed += 1;
-      else if (hit) hits.push(hit);
+      const { symbol, gapped: isGapped } = batch[index];
+      const hit = result.ok ? confirmOrbHit(result.data, symbol, { market, window }) : "unusable";
+      if (hit === "unusable") {
+        if (isGapped) gappedFailed += 1;
+        else failed += 1;
+      } else if (hit) {
+        hits.push(hit);
+        if (isGapped) gappedHits += 1;
+      }
     });
   }
   hits.sort((a, b) => a.at.localeCompare(b.at) || a.ticker.localeCompare(b.ticker));
@@ -119,6 +138,11 @@ export const runScan = async (
         confirmed: toConfirm.length - failed,
         unconfirmed: candidates.length - toConfirm.length,
         failed,
+        // Gapped stocks are already counted in `unusable`. These say what became of them.
+        gapped: gapped.length,
+        gappedChecked: gappedToCheck.length - gappedFailed,
+        gappedUnchecked: gapped.length - gappedToCheck.length,
+        gappedHits,
         hits: hits.length,
       },
       hits,
