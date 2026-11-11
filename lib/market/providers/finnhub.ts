@@ -2,6 +2,7 @@ import "server-only";
 
 import { fetchJson } from "@/lib/market/http";
 import { MARKETS } from "@/lib/market/markets";
+import { companyAliases, filterNews, NEWS_DAYS } from "@/lib/market/news";
 import type {
   CompanyProfile,
   MarketDataProvider,
@@ -13,8 +14,6 @@ import type {
 // The free Finnhub plan covers US search, profiles and news. It returns 403 for
 // Indian quotes, profiles and news, and for candles in every market.
 const BASE_URL = "https://finnhub.io/api/v1";
-const NEWS_DAYS = 7;
-const MAX_NEWS_ITEMS = 20;
 const MAX_SEARCH_RESULTS = 10;
 
 type FinnhubSearch = {
@@ -132,25 +131,32 @@ export const finnhubProvider: Pick<
     };
   },
 
-  async news(symbol): Promise<MarketDataResult<NewsItem[]>> {
+  // Without a company name from the caller, the cached profile supplies it. If that
+  // fails too, items are matched on the ticker alone.
+  async news(symbol, company): Promise<MarketDataResult<NewsItem[]>> {
+    const ticker = encodeURIComponent(symbol.ticker);
     const to = new Date();
     const from = new Date(to.getTime() - NEWS_DAYS * 24 * 60 * 60 * 1000);
-    const result = await request<FinnhubNews>(
-      `/company-news?symbol=${encodeURIComponent(symbol.ticker)}&from=${toDateParam(from)}&to=${toDateParam(to)}`,
-      900,
-    );
+    const [result, profile] = await Promise.all([
+      request<FinnhubNews>(
+        `/company-news?symbol=${ticker}&from=${toDateParam(from)}&to=${toDateParam(to)}`,
+        900,
+      ),
+      company
+        ? Promise.resolve(null)
+        : request<FinnhubProfile>(`/stock/profile2?symbol=${ticker}`, 86_400),
+    ]);
     if (!result.ok) return result;
 
-    return {
-      ok: true,
-      data: result.data.slice(0, MAX_NEWS_ITEMS).map((item) => ({
-        headline: item.headline,
-        summary: item.summary,
-        url: item.url,
-        source: item.source,
-        imageUrl: item.image || null,
-        publishedAt: item.datetime * 1000,
-      })),
-    };
+    const name = company ?? (profile?.ok ? (profile.data.name ?? null) : null);
+    const items: NewsItem[] = result.data.map((item) => ({
+      headline: item.headline,
+      summary: item.summary,
+      url: item.url,
+      source: item.source,
+      imageUrl: item.image || null,
+      publishedAt: item.datetime * 1000,
+    }));
+    return { ok: true, data: filterNews(items, companyAliases(symbol, name)) };
   },
 };

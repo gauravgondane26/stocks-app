@@ -4,12 +4,19 @@ import { revalidatePath } from "next/cache";
 
 import { getTradeSettingsModel } from "@/database/models/tradeSettings.model";
 import { getCurrentUser, requireUser } from "@/lib/better-auth/session";
+import {
+  DEFAULT_EMAIL_SETTINGS,
+  readEmailSettings,
+  writeEmailSettings,
+  type EmailSettings,
+} from "@/lib/email-settings";
 import { isMarketId } from "@/lib/market/markets";
 import type { MarketId } from "@/lib/market/types";
 import {
   defaultTradeSettings,
   type TradeSettings,
 } from "@/lib/trade/settings";
+import { validateEmailSettings } from "@/lib/validation/emailSettings";
 import { validateTradeSettings } from "@/lib/validation/tradeSettings";
 
 // Falls back to the defaults, marked unsaved, so a database problem doesn't break the page.
@@ -68,5 +75,36 @@ export const saveTradeSettings = async (
 
   revalidatePath("/settings");
   revalidatePath("/stocks/[market]/[ticker]", "page");
+  return { ok: true };
+};
+
+// Falls back to "both on", marked unloaded, so a database problem doesn't break the page.
+export const getEmailSettings = async (): Promise<{ settings: EmailSettings; loaded: boolean }> => {
+  const user = await requireUser();
+  try {
+    return { settings: await readEmailSettings(user.id), loaded: true };
+  } catch (error) {
+    console.error("Load email settings failed:", error);
+    return { settings: DEFAULT_EMAIL_SETTINGS, loaded: false };
+  }
+};
+
+export const saveEmailSettings = async (
+  input: unknown,
+): Promise<{ ok: true } | { ok: false; error: string }> => {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Please sign in again." };
+
+  const result = validateEmailSettings(input);
+  if (!result.valid) return { ok: false, error: result.error };
+
+  try {
+    await writeEmailSettings(user.id, result.data);
+  } catch (error) {
+    console.error("Save email settings failed:", error);
+    return { ok: false, error: "Couldn't save your email settings. Please try again." };
+  }
+
+  revalidatePath("/settings");
   return { ok: true };
 };

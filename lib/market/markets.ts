@@ -25,6 +25,8 @@ export type MarketConfig = {
     noEntriesAfter: string;
     flatBy: string;
   };
+  // When the daily news digest goes out on trading days, in market time.
+  digestTime: string;
 };
 
 export const MARKETS: Record<MarketId, MarketConfig> = {
@@ -49,6 +51,8 @@ export const MARKETS: Record<MarketId, MarketConfig> = {
       noEntriesAfter: "15:30",
       flatBy: "15:55",
     },
+    // An hour after the daily scan.
+    digestTime: "17:30",
   },
   IN: {
     id: "IN",
@@ -73,7 +77,17 @@ export const MARKETS: Record<MarketId, MarketConfig> = {
       noEntriesAfter: "15:00",
       flatBy: "15:15",
     },
+    // The build plan's 5:30 PM IST, two hours after the close.
+    digestTime: "17:30",
   },
+};
+
+const listFormat = new Intl.ListFormat("en", { type: "conjunction" });
+
+// "India (NSE and BSE, prices in INR)", for AI prompts.
+export const describeMarket = (market: MarketId) => {
+  const { label, exchanges, currency } = MARKETS[market];
+  return `${label} (${listFormat.format(exchanges.map(({ code }) => code))}, prices in ${currency})`;
 };
 
 export const MARKET_IDS = Object.keys(MARKETS) as MarketId[];

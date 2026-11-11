@@ -87,5 +87,7 @@ export interface MarketDataProvider {
     symbols: StockSymbol[],
     request: BarRequest,
   ): Promise<MarketDataResult<Record<string, CloseSeries>>>;
-  news(symbol: StockSymbol): Promise<MarketDataResult<NewsItem[]>>;
+  // Recent stories that name the company, newest first. Pass the company name when
+  // known (a watchlist entry has it); otherwise the provider looks it up.
+  news(symbol: StockSymbol, company?: string): Promise<MarketDataResult<NewsItem[]>>;
 }

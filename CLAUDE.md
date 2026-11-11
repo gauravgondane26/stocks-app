@@ -22,7 +22,7 @@ The app (OpenWatch, renamed from the tutorial's Signalist) started as a YouTube 
 
 Phases, in dependency order: 0 fixes and setup, 1 database and auth, 2 market data layer, 3 search, stock page and watchlist, 4 price alerts, 5 trade tools, 6 news, emails and digest, 7 tests and deploy. The plan's "Parked for later" items (F&O data, ICICI Breeze, an in-app Claude assistant) are out of scope.
 
-Inngest, Nodemailer and Gemini are planned but not in the repo yet. Check `package.json` before assuming a dependency is installed.
+Inngest and Nodemailer are installed. Phase 6 uses OpenAI (`OPENAI_API_KEY`) for the welcome email intro and digest summaries, in place of the tutorial's Gemini. There is no SDK: every AI call goes through `generateText` in `lib/ai/index.ts`, which tries `gpt-5-nano` (cheapest, but deprecated by OpenAI) and then `gpt-6-luna`, each at its lowest reasoning effort, and returns a failure instead of throwing so callers fall back to plain text. Pass an `accept` check for anything the text must not say (the welcome intro rejects real-time or live price claims), because a rejected answer goes to the next model. Check `package.json` before assuming a dependency is installed.
 
 ## Rules for new code
 
@@ -48,6 +48,7 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 **Markets and data**
 
 - Features get data only through `getMarketData(market)` in `lib/market/index.ts`, never from Finnhub or Yahoo directly. Results are `{ ok: true, data }` or `{ ok: false, reason }`, so handle failure as a normal case. The free Finnhub key covers US search, profile and news only: Yahoo supplies quotes and bars for both markets, and India search uses `lib/market/data/nse-symbols.json` (refresh it with `node scripts/seed-nse-symbols.mjs`).
+- News: US from Finnhub, India from Google News RSS search by company name (`lib/market/providers/google-news.ts`), because Yahoo's per-ticker feed returned nothing for RELIANCE, HDFCBANK and ITC. Pass the company name to `news(symbol, company)` when you have it. Both providers run `filterNews` in `lib/market/news.ts`, which keeps only the last 7 days of headlines that name the company and drops quote pages, price predictions, social posts and duplicates. About half of Finnhub's raw items are about other companies.
 - Call data sources with the honest `User-Agent` in `lib/market/http.ts`. Don't add browser disguises or session-cookie tricks to reach an endpoint.
 - TradingView embeds refuse NSE symbols, so `toTradingView()` returns the BSE listing for Indian stocks. Yahoo still uses `.NS`, so widget prices can differ slightly from quotes. It also rewrites `&` and `-` as `_`, TradingView's spelling (`M_M`, `BAJAJ_AUTO`). Check new Indian widget symbols in a browser, because a bad one only shows an error at runtime. `getChartListing()` in `lib/market/charts.ts` hides the widgets when a stock has no BSE listing.
 - Free sources have no Indian market cap or P/E, so those fields are null and show a dash.
@@ -65,7 +66,9 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 
 - Keep rule evaluation in pure functions (`lib/alerts/evaluate.ts`) with no database or network calls.
 - An alert rings once. Update it with a condition on `status: active`, and send the email only if that update changed a document, so overlapping runs can't send twice.
-- Digests fan out one event per user, so a failed email doesn't stop the rest.
+- Digests fan out one event per user, so a failed email doesn't stop the rest. The daily digest (`lib/digest.ts`, Inngest `digest-us`/`digest-in` at each market's `digestTime`, then `send-digest` per user) skips non-trading days, covers news since the previous trading day's digest, and sends nothing when no stock has new headlines. The fan-out event id is `digest-<market>-<date>-<userId>`, so re-running a market's digest on the same day emails nobody twice; to re-send while testing, send `app/digest.user` yourself without an id.
+- Digest and alert emails are optional: `wantsEmail(userId, kind)` in `lib/email-settings.ts` reads the user's choice (no saved document means on, and a read failure also means on, so an alert isn't silently dropped). The welcome email always goes out. Every optional email links to `/settings#email`. A new kind of optional email needs a field in `EmailSettings`, a switch in `components/EmailSettingsForm.tsx`, a `wantsEmail` check in the job and the opt-out line from `lib/nodemailer/templates.ts`.
+- Jobs load a user's name and email inside the step that sends, through `findUserFields` in `lib/users.ts`, so contact details never land in saved step results. That helper takes any user id, so keep it out of anything a server action can reach.
 
 **Porting and the tutorial**
 
@@ -74,7 +77,7 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 
 **Open questions for the owner**
 
-Ask rather than guess: which Indian sectors to offer in the sign-up form. (The Indian flat-by time is settled: 15:15, in `MARKETS.IN.tradeDefaults`.)
+None open. Settled: the Indian flat-by time is 15:15 (`MARKETS.IN.tradeDefaults`). Sign-up industries are per market in `PREFERRED_INDUSTRIES` (India follows NSE's sectoral indices), and the investment goals, now including "Active trading", are shared by both markets.
 
 ## Stack
 

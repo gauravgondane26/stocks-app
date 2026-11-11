@@ -19,6 +19,7 @@ const isRetryable = (status: number) => status === 429 || status >= 500;
 const attempt = async <T>(
   url: string,
   { revalidate, source, headers }: FetchJsonOptions,
+  read: (response: Response) => Promise<T>,
 ): Promise<MarketDataResult<T> & { retry?: boolean }> => {
   try {
     const response = await fetch(url, {
@@ -28,7 +29,7 @@ const attempt = async <T>(
     });
 
     if (response.ok) {
-      return { ok: true, data: (await response.json()) as T };
+      return { ok: true, data: await read(response) };
     }
     if (response.status === 404) return { ok: false, reason: "not_found" };
 
@@ -47,13 +48,21 @@ const attempt = async <T>(
 
 // One retry for rate limits, server errors and network failures, then give up so
 // that the caller can show "data unavailable".
-export const fetchJson = async <T>(
+const fetchWithRetry = async <T>(
   url: string,
   options: FetchJsonOptions,
+  read: (response: Response) => Promise<T>,
 ): Promise<MarketDataResult<T>> => {
-  const first = await attempt<T>(url, options);
+  const first = await attempt<T>(url, options, read);
   if (first.ok || !first.retry) return first;
 
   await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-  return attempt<T>(url, options);
+  return attempt<T>(url, options, read);
 };
+
+export const fetchJson = <T>(url: string, options: FetchJsonOptions) =>
+  fetchWithRetry<T>(url, options, (response) => response.json() as Promise<T>);
+
+// For feeds such as RSS that aren't JSON.
+export const fetchText = (url: string, options: FetchJsonOptions) =>
+  fetchWithRetry<string>(url, options, (response) => response.text());
