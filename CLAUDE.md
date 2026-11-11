@@ -26,7 +26,7 @@ The app (OpenWatch, renamed from the tutorial's Signalist) started as a YouTube 
 
 `Stocks App Build Plan.md` is the roadmap and holds the task checklists. It is gitignored, so it exists only on the owner's machine and may be missing from other checkouts. Work one phase at a time, finish its "done when" line, and commit before starting the next. Update this file as each phase lands.
 
-Production runs at https://openwatch-phi.vercel.app (Vercel project `openwatch`, functions in `bom1` next to the Mumbai Atlas cluster, set in `vercel.json`). It shares the `openwatch` Atlas database with local development. Inngest Cloud reaches it through the Vercel integration, and the GitHub repo is connected, so merges to `main` deploy to production.
+Production runs at https://openwatch-phi.vercel.app (Vercel project `openwatch`, functions in `bom1` next to the Mumbai Atlas cluster, set in `vercel.json`). It shares the `openwatch` Atlas database with local development. Inngest Cloud reaches it through the Vercel integration, and the GitHub repo is connected, so merges to `main` deploy to production. `INNGEST_SERVE_ORIGIN` in Vercel makes the integration sync the public domain, because deployment URLs sit behind Vercel's deployment protection; `curl -X PUT https://openwatch-phi.vercel.app/api/inngest` resyncs by hand.
 
 Phases, in dependency order: 0 fixes and setup, 1 database and auth, 2 market data layer, 3 search, stock page and watchlist, 4 price alerts, 5 trade tools, 6 news, emails and digest, 7 tests and deploy. The plan's "Parked for later" items (F&O data, ICICI Breeze, an in-app Claude assistant) are out of scope.
 

@@ -59,7 +59,7 @@ The app runs on Vercel, the database on MongoDB Atlas and the background jobs on
 
 1. **Atlas.** Create a database user, and allow access from anywhere (`0.0.0.0/0`) under Network Access: Vercel functions don't have fixed IP addresses on the free plan, so the database password is what protects it.
 2. **Vercel.** Import the GitHub repository and set the variables from the table above, with `BETTER_AUTH_URL` set to the production URL and `INNGEST_DEV` left out.
-3. **Inngest.** Install the Inngest integration for Vercel, which sets `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` and registers `https://<your-app>/api/inngest`. Without the integration, copy the two keys from the Inngest dashboard into Vercel and sync the app URL there by hand.
+3. **Inngest.** Install the Inngest integration for Vercel, which sets `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` and syncs the app on every deploy. Also set `INNGEST_SERVE_ORIGIN` to the production URL (for example `https://openwatch-phi.vercel.app`): the integration otherwise syncs each deployment's own URL, which Vercel's default deployment protection blocks, and the sync fails as an "unattached sync". To sync by hand, run `curl -X PUT https://<your-app>/api/inngest`.
 4. Redeploy so the new variables apply, sign up, and set an alert at a price the stock has already passed. The next check (every 5 minutes while the market is open) should ring it and send one email.
 
 Long jobs have a 300-second limit, the most Vercel's free plan allows with Fluid compute: the Inngest route and the scanner page set `maxDuration = 300`. A US breakout scan usually takes about a minute.
