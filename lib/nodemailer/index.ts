@@ -4,7 +4,12 @@ import nodemailer, { type Transporter } from "nodemailer";
 
 import { stockPath } from "@/lib/market/symbols";
 import type { StockSymbol } from "@/lib/market/types";
-import { alertEmailHtml, alertEmailText } from "@/lib/nodemailer/templates";
+import {
+  alertEmailHtml,
+  alertEmailText,
+  welcomeEmailHtml,
+  welcomeEmailText,
+} from "@/lib/nodemailer/templates";
 
 let transporter: Transporter | undefined;
 
@@ -19,6 +24,8 @@ const getTransporter = (): Transporter | null => {
   });
   return transporter;
 };
+
+const sender = () => `OpenWatch <${process.env.NODEMAILER_EMAIL}>`;
 
 // False when email isn't configured, so a missing setting doesn't fail the alert check.
 export const sendAlertEmail = async ({
@@ -40,11 +47,40 @@ export const sendAlertEmail = async ({
 
   const stockUrl = `${process.env.BETTER_AUTH_URL}${stockPath(symbol)}`;
   await mailer.sendMail({
-    from: `OpenWatch <${process.env.NODEMAILER_EMAIL}>`,
+    from: sender(),
     to,
     subject: `OpenWatch alert: ${symbol.ticker}`,
     text: alertEmailText({ message, company, stockUrl }),
     html: alertEmailHtml({ message, company, stockUrl }),
+  });
+  return true;
+};
+
+// False when email isn't configured. A send failure throws, so the job can retry.
+export const sendWelcomeEmail = async ({
+  to,
+  name,
+  intro,
+  marketLabel,
+}: {
+  to: string;
+  name: string;
+  intro: string;
+  marketLabel: string;
+}): Promise<boolean> => {
+  const mailer = getTransporter();
+  if (!mailer) {
+    console.warn("NODEMAILER_EMAIL or NODEMAILER_PASSWORD is not set.");
+    return false;
+  }
+
+  const appUrl = `${process.env.BETTER_AUTH_URL}/`;
+  await mailer.sendMail({
+    from: sender(),
+    to,
+    subject: "Welcome to OpenWatch",
+    text: welcomeEmailText({ name, intro, marketLabel, appUrl }),
+    html: welcomeEmailHtml({ name, intro, marketLabel, appUrl }),
   });
   return true;
 };

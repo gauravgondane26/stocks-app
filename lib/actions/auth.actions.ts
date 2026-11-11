@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { getAuth } from "@/lib/better-auth/auth";
 import { validateSignIn, validateSignUp } from "@/lib/validation/auth";
+import { queueWelcomeEmail } from "@/lib/welcome";
 
 const GENERIC_ERROR = "Something went wrong. Please try again.";
 
@@ -20,12 +21,14 @@ export const signUpWithEmail = async (
 
   const { fullName, email, password, ...profile } = result.data;
 
+  let userId: string;
   try {
     const auth = await getAuth();
-    await auth.api.signUpEmail({
+    const { user } = await auth.api.signUpEmail({
       body: { name: fullName, email, password, ...profile },
       headers: await headers(),
     });
+    userId = user.id;
   } catch (error) {
     const code = getErrorCode(error);
     if (code?.startsWith("USER_ALREADY_EXISTS")) {
@@ -34,6 +37,8 @@ export const signUpWithEmail = async (
     console.error("Sign up failed:", code ?? error);
     return { error: GENERIC_ERROR };
   }
+
+  await queueWelcomeEmail(userId);
 
   // redirect() works by throwing, so it has to stay outside the try block.
   redirect("/");

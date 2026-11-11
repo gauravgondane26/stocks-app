@@ -10,6 +10,27 @@ import { MARKET_IDS, MARKETS } from "@/lib/market/markets";
 import type { MarketId } from "@/lib/market/types";
 import { allWatchlistSymbols, buildUniverse, runScan, saveScan } from "@/lib/scanner";
 import { toMinutes } from "@/lib/trade/session";
+import { deliverWelcomeEmail, findWelcomeProfile, writeWelcomeIntro } from "@/lib/welcome";
+
+// Sent once per new user by the sign-up action. The event carries only the user id.
+// Step results are saved by Inngest, so the profile step returns no name or email,
+// and the AI step never throws: it falls back to plain text instead of retrying.
+export const welcomeEmail = inngest.createFunction(
+  {
+    id: "send-welcome-email",
+    retries: 2,
+    triggers: [{ event: "app/user.created" }],
+  },
+  async ({ event, step }) => {
+    const userId = typeof event.data?.userId === "string" ? event.data.userId : "";
+    const profile = await step.run("load-profile", () => findWelcomeProfile(userId));
+    if (!profile) return { skipped: "user not found" };
+
+    const intro = await step.run("write-intro", () => writeWelcomeIntro(profile));
+    const sent = await step.run("send-email", () => deliverWelcomeEmail(userId, intro.text));
+    return { introSource: intro.source, sent };
+  },
+);
 
 // Every 5 minutes is about 17,000 executions a month with one step per run. The free
 // Inngest plan includes 50,000 (checked 2026-11-09). The event trigger is for testing
