@@ -66,7 +66,8 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 
 - Keep rule evaluation in pure functions (`lib/alerts/evaluate.ts`) with no database or network calls.
 - An alert rings once. Update it with a condition on `status: active`, and send the email only if that update changed a document, so overlapping runs can't send twice.
-- Digests fan out one event per user, so a failed email doesn't stop the rest.
+- Digests fan out one event per user, so a failed email doesn't stop the rest. The daily digest (`lib/digest.ts`, Inngest `digest-us`/`digest-in` at each market's `digestTime`, then `send-digest` per user) skips non-trading days, covers news since the previous trading day's digest, and sends nothing when no stock has new headlines. The fan-out event id is `digest-<market>-<date>-<userId>`, so re-running a market's digest on the same day emails nobody twice; to re-send while testing, send `app/digest.user` yourself without an id.
+- Jobs load a user's name and email inside the step that sends, through `findUserFields` in `lib/users.ts`, so contact details never land in saved step results. That helper takes any user id, so keep it out of anything a server action can reach.
 
 **Porting and the tutorial**
 

@@ -7,6 +7,9 @@ import type { StockSymbol } from "@/lib/market/types";
 import {
   alertEmailHtml,
   alertEmailText,
+  digestEmailHtml,
+  digestEmailText,
+  type DigestEmail,
   welcomeEmailHtml,
   welcomeEmailText,
 } from "@/lib/nodemailer/templates";
@@ -52,6 +55,24 @@ export const sendAlertEmail = async ({
     subject: `OpenWatch alert: ${symbol.ticker}`,
     text: alertEmailText({ message, company, stockUrl }),
     html: alertEmailHtml({ message, company, stockUrl }),
+  });
+  return true;
+};
+
+// False when email isn't configured. A send failure throws, so the job can retry.
+export const sendDigestEmail = async (to: string, email: DigestEmail): Promise<boolean> => {
+  const mailer = getTransporter();
+  if (!mailer) {
+    console.warn("NODEMAILER_EMAIL or NODEMAILER_PASSWORD is not set.");
+    return false;
+  }
+
+  await mailer.sendMail({
+    from: sender(),
+    to,
+    subject: `Your OpenWatch ${email.marketLabel} digest for ${email.dateLabel}`,
+    text: digestEmailText(email),
+    html: digestEmailHtml(email),
   });
   return true;
 };
