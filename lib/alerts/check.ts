@@ -8,6 +8,7 @@ import { connectToDatabase } from "@/database/mongoose";
 import { ringMessage } from "@/lib/alerts/describe";
 import { shouldRing } from "@/lib/alerts/evaluate";
 import type { AlertQuote, MarketClock } from "@/lib/alerts/types";
+import { wantsEmail } from "@/lib/email-settings";
 import { getMarketData } from "@/lib/market";
 import { getMarketClock, isMarketOpen } from "@/lib/market/hours";
 import { MARKET_IDS } from "@/lib/market/markets";
@@ -127,20 +128,23 @@ export const ringAlert = async ({
   }
 
   try {
-    const user = await findUserContact(alert.userId);
-    if (user?.email) {
-      await sendAlertEmail({
-        to: user.email,
-        message,
-        symbol: {
-          market: alert.market,
-          exchange: alert.exchange,
-          ticker: alert.ticker,
-        },
-        company: alert.company,
-      });
-    } else {
-      console.warn("Alert rang for a user with no email address.");
+    // The alert still rings and shows in the app when its email is turned off.
+    if (await wantsEmail(alert.userId, "alerts")) {
+      const user = await findUserContact(alert.userId);
+      if (user?.email) {
+        await sendAlertEmail({
+          to: user.email,
+          message,
+          symbol: {
+            market: alert.market,
+            exchange: alert.exchange,
+            ticker: alert.ticker,
+          },
+          company: alert.company,
+        });
+      } else {
+        console.warn("Alert rang for a user with no email address.");
+      }
     }
   } catch (error) {
     console.error("Send alert email failed:", error);

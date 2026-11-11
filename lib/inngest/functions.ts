@@ -12,6 +12,7 @@ import {
   loadDigestWatchlist,
   writeDigestSummary,
 } from "@/lib/digest";
+import { wantsEmail } from "@/lib/email-settings";
 import { inngest } from "@/lib/inngest/client";
 import { isTradingDay } from "@/lib/market/hours";
 import { isMarketId, MARKET_IDS, MARKETS } from "@/lib/market/markets";
@@ -136,6 +137,11 @@ export const digestForUser = inngest.createFunction(
     ) {
       return { skipped: "bad event data" };
     }
+
+    // The scheduler already leaves these users out; this covers an event sent by
+    // hand or a setting changed after the fan-out.
+    const wanted = await step.run("check-settings", () => wantsEmail(userId, "digest"));
+    if (!wanted) return { skipped: "digest turned off" };
 
     const entries = await step.run("load-watchlist", () => loadDigestWatchlist(userId, market));
     if (entries.length === 0) return { skipped: "empty watchlist" };

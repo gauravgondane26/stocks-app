@@ -3,6 +3,7 @@ import "server-only";
 import { getWatchlistModel } from "@/database/models/watchlist.model";
 import { generateText } from "@/lib/ai";
 import { claimsLivePrices, cleanAiText, givesAdvice } from "@/lib/ai/checks";
+import { usersWithDigestOff } from "@/lib/email-settings";
 import { getMarketData } from "@/lib/market";
 import { getMarketClock, isTradingDay } from "@/lib/market/hours";
 import { describeMarket, MARKETS } from "@/lib/market/markets";
@@ -34,9 +35,12 @@ export const digestWindow = (market: MarketId, now: Date = new Date()) => {
   return { date: getMarketClock(market, now).date, since: now.getTime() - days * DAY_MS };
 };
 
+// Users with a watchlist in the market who haven't turned the digest off.
 export const findDigestUserIds = async (market: MarketId): Promise<string[]> => {
   const Watchlist = await getWatchlistModel();
-  return (await Watchlist.distinct("userId", { market })).map(String);
+  const userIds = (await Watchlist.distinct("userId", { market })).map(String);
+  const optedOut = await usersWithDigestOff(userIds);
+  return userIds.filter((userId) => !optedOut.has(userId));
 };
 
 export const loadDigestWatchlist = async (userId: string, market: MarketId): Promise<DigestEntry[]> => {
@@ -153,6 +157,7 @@ export const deliverDigestEmail = async ({
     stocks: news.stocks,
     quiet: news.quiet,
     watchlistUrl: `${process.env.BETTER_AUTH_URL}/watchlist`,
+    settingsUrl: `${process.env.BETTER_AUTH_URL}/settings#email`,
     locale,
     timeZone,
   });

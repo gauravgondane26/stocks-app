@@ -9,15 +9,24 @@ const escapeHtml = (value: string) =>
 const NOTICE =
   "Prices are delayed and unofficial, so this alert may be up to about 15 minutes late. An alert is information only, not an order or financial advice.";
 
+// The line that ends every optional email, pointing at the Settings page.
+const optOutText = (kind: string, settingsUrl: string) =>
+  `To stop ${kind}, turn them off in Settings: ${settingsUrl}`;
+const optOutHtml = (kind: string, settingsUrl: string) =>
+  `<p style="margin:8px 0 0;font-size:12px;line-height:1.5;color:#6b7280;">To stop ${escapeHtml(kind)}, <a href="${escapeHtml(settingsUrl)}" style="color:#6b7280;">turn them off in Settings</a>.</p>`;
+
 export const alertEmailText = ({
   message,
   company,
   stockUrl,
+  settingsUrl,
 }: {
   message: string;
   company: string;
   stockUrl: string;
-}) => `${company}\n\n${message}\n\n${stockUrl}\n\n${NOTICE}\n`;
+  settingsUrl: string;
+}) =>
+  `${company}\n\n${message}\n\n${stockUrl}\n\n${NOTICE}\n${optOutText("alert emails", settingsUrl)}\n`;
 
 const WELCOME_NOTICE =
   "OpenWatch is read-only and never places orders. Prices are delayed and unofficial. Nothing in OpenWatch is financial advice, and most day traders lose money.";
@@ -81,6 +90,7 @@ export type DigestEmail = {
   // Watchlist tickers with no new headlines.
   quiet: string[];
   watchlistUrl: string;
+  settingsUrl: string;
   locale: string;
   timeZone: string;
 };
@@ -115,6 +125,7 @@ export const digestEmailText = (email: DigestEmail) =>
     `Your watchlist: ${email.watchlistUrl}`,
     "",
     DIGEST_NOTICE,
+    optOutText("these digests", email.settingsUrl),
     "",
   ].join("\n");
 
@@ -144,20 +155,24 @@ export const digestEmailHtml = (email: DigestEmail) => `<div style="font-family:
   }
   <p style="margin:0 0 24px;"><a href="${escapeHtml(email.watchlistUrl)}" style="color:#b45309;">Open your watchlist</a></p>
   <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">${DIGEST_NOTICE}</p>
+  ${optOutHtml("these digests", email.settingsUrl)}
 </div>`;
 
 export const alertEmailHtml = ({
   message,
   company,
   stockUrl,
+  settingsUrl,
 }: {
   message: string;
   company: string;
   stockUrl: string;
+  settingsUrl: string;
 }) => `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111827;">
   <p style="margin:0 0 4px;font-size:14px;color:#6b7280;">OpenWatch price alert</p>
   <h1 style="margin:0 0 16px;font-size:20px;">${escapeHtml(company)}</h1>
   <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">${escapeHtml(message)}</p>
   <p style="margin:0 0 24px;"><a href="${escapeHtml(stockUrl)}" style="color:#b45309;">View this stock</a></p>
   <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">${NOTICE}</p>
+  ${optOutHtml("alert emails", settingsUrl)}
 </div>`;

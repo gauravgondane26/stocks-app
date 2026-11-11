@@ -49,12 +49,13 @@ export const sendAlertEmail = async ({
   }
 
   const stockUrl = `${process.env.BETTER_AUTH_URL}${stockPath(symbol)}`;
+  const settingsUrl = `${process.env.BETTER_AUTH_URL}/settings#email`;
   await mailer.sendMail({
     from: sender(),
     to,
     subject: `OpenWatch alert: ${symbol.ticker}`,
-    text: alertEmailText({ message, company, stockUrl }),
-    html: alertEmailHtml({ message, company, stockUrl }),
+    text: alertEmailText({ message, company, stockUrl, settingsUrl }),
+    html: alertEmailHtml({ message, company, stockUrl, settingsUrl }),
   });
   return true;
 };
