@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { allowRequest } from "@/lib/rate-limit";
+import { allowRequest, clientIp } from "@/lib/rate-limit";
+
+describe("clientIp", () => {
+  it("takes the first x-forwarded-for address", () => {
+    expect(clientIp(new Headers({ "x-forwarded-for": " 203.0.113.7 , 10.0.0.1" }))).toBe("203.0.113.7");
+  });
+
+  it("falls back to x-real-ip, then to a shared bucket", () => {
+    expect(clientIp(new Headers({ "x-real-ip": "203.0.113.8" }))).toBe("203.0.113.8");
+    expect(clientIp(new Headers())).toBe("unknown");
+  });
+});
 
 describe("allowRequest", () => {
   beforeEach(() => {
