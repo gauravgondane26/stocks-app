@@ -41,18 +41,21 @@ const ScanSummary = ({ scan, market }: { scan: LoadedScan; market: MarketId }) =
   if (!scan) return <p className="text-sm text-gray-500">No scan yet.</p>;
   const { counts } = scan;
   const failed = (counts.requested ?? 0) - (counts.scanned ?? 0);
+  const gappedChecked = counts.gappedChecked ?? 0;
+  const unchecked = (counts.unconfirmed ?? 0) + (counts.gappedUnchecked ?? 0);
   return (
     <p className="text-sm text-gray-500">
       {scan.universe.index} plus watchlists: {counts.scanned} of {counts.requested} charts
       scanned
       {failed > 0 &&
-        ` (${failed} had no data or ${failed === 1 ? "was" : "were"} incomplete)`}
+        ` (${failed} had no data or ${failed === 1 ? "was" : "were"} incomplete${
+          gappedChecked > 0 ? `; ${gappedChecked} of those checked with full charts instead` : ""
+        })`}
       . Data for{" "}
       {scan.dataDate}
       {scan.cutoff && ` up to ${scan.cutoff}`}, scanned {marketClockLabel(market, scan.createdAt)}{" "}
       market time{scan.userId ? " (your run)" : ""}.
-      {(counts.unconfirmed ?? 0) > 0 &&
-        ` Partial: ${counts.unconfirmed} candidates weren't checked.`}
+      {unchecked > 0 && ` Partial: ${unchecked} stocks that might have broken out weren't checked.`}
     </p>
   );
 };
