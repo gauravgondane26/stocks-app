@@ -1,6 +1,7 @@
 "use client";
 
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useEffect } from "react";
+import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
 import CountrySelectField from "@/components/forms/CountrySelectField";
@@ -14,6 +15,7 @@ import {
   PREFERRED_INDUSTRIES,
   RISK_TOLERANCE_OPTIONS,
 } from "@/lib/constants";
+import { marketForCountry } from "@/lib/market/markets";
 import {
   EMAIL_PATTERN,
   NAME_MAX_LENGTH,
@@ -26,6 +28,8 @@ const SignUp = () => {
     register,
     handleSubmit,
     control,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<SignUpFormData>({
     defaultValues: {
@@ -39,6 +43,16 @@ const SignUp = () => {
     },
     mode: "onBlur",
   });
+
+  // Industries depend on the market the country maps to. When the country moves to
+  // the other market, the old industry isn't in the new list, so pick its first one.
+  const industries = PREFERRED_INDUSTRIES[marketForCountry(useWatch({ control, name: "country" }))];
+  useEffect(() => {
+    const current = getValues("preferredIndustry");
+    if (!industries.some(({ value }) => value === current)) {
+      setValue("preferredIndustry", industries[0].value);
+    }
+  }, [industries, getValues, setValue]);
 
   const onSubmit: SubmitHandler<SignUpFormData> = async (data) => {
     try {
@@ -131,7 +145,7 @@ const SignUp = () => {
           name="preferredIndustry"
           label="Preferred Industry"
           placeholder="Select your preferred industry"
-          options={PREFERRED_INDUSTRIES}
+          options={industries}
           control={control}
           error={errors.preferredIndustry}
           required

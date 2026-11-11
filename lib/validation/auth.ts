@@ -4,6 +4,7 @@ import {
   RISK_TOLERANCE_OPTIONS,
 } from "@/lib/constants";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
+import { marketForCountry } from "@/lib/market/markets";
 
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
@@ -64,7 +65,7 @@ export const validateSignUp = (
   if (!isOption(RISK_TOLERANCE_OPTIONS, data.riskTolerance)) {
     return { valid: false, error: "Select a valid risk tolerance." };
   }
-  if (!isOption(PREFERRED_INDUSTRIES, data.preferredIndustry)) {
+  if (!isOption(PREFERRED_INDUSTRIES[marketForCountry(data.country)], data.preferredIndustry)) {
     return { valid: false, error: "Select a valid industry." };
   }
 

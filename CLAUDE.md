@@ -74,7 +74,7 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 
 **Open questions for the owner**
 
-Ask rather than guess: which Indian sectors to offer in the sign-up form. (The Indian flat-by time is settled: 15:15, in `MARKETS.IN.tradeDefaults`.)
+None open. Settled: the Indian flat-by time is 15:15 (`MARKETS.IN.tradeDefaults`). Sign-up industries are per market in `PREFERRED_INDUSTRIES` (India follows NSE's sectoral indices), and the investment goals, now including "Active trading", are shared by both markets.
 
 ## Stack
 
