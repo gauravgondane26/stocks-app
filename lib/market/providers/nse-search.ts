@@ -24,6 +24,10 @@ const rank = ({ ticker, name }: NseSymbol, query: string): number | null => {
   return null;
 };
 
+// The company name for an NSE ticker, or null when it isn't in the list.
+export const findNseName = (ticker: string): string | null =>
+  nseSymbols.symbols.find((symbol) => symbol.ticker === ticker)?.name ?? null;
+
 // Searches the list seeded by scripts/seed-nse-symbols.mjs. BSE-only stocks aren't
 // in it, though BSE tickers work for quotes and charts when the symbol is known.
 export const searchNseSymbols = async (

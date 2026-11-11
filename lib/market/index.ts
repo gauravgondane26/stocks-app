@@ -1,6 +1,7 @@
 import "server-only";
 
 import { finnhubProvider } from "@/lib/market/providers/finnhub";
+import { googleNewsProvider } from "@/lib/market/providers/google-news";
 import { searchNseSymbols } from "@/lib/market/providers/nse-search";
 import { yahooProvider } from "@/lib/market/providers/yahoo";
 import type { MarketDataProvider, MarketId } from "@/lib/market/types";
@@ -20,8 +21,7 @@ const PROVIDERS: Record<MarketId, MarketDataProvider> = {
     bars: yahooProvider.bars,
     profile: yahooProvider.profile,
     closeSeries: yahooProvider.closeSeries,
-    // Phase 6 chooses an Indian news source.
-    news: async () => ({ ok: false, reason: "not_supported" }),
+    news: googleNewsProvider.news,
   },
 };
 
