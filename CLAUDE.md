@@ -22,7 +22,7 @@ The app (OpenWatch, renamed from the tutorial's Signalist) started as a YouTube 
 
 Phases, in dependency order: 0 fixes and setup, 1 database and auth, 2 market data layer, 3 search, stock page and watchlist, 4 price alerts, 5 trade tools, 6 news, emails and digest, 7 tests and deploy. The plan's "Parked for later" items (F&O data, ICICI Breeze, an in-app Claude assistant) are out of scope.
 
-Inngest and Nodemailer are installed. Phase 6 uses OpenAI (`OPENAI_API_KEY`) for the welcome email intro and digest summaries, in place of the tutorial's Gemini, and it isn't installed yet. Check `package.json` before assuming a dependency is installed.
+Inngest and Nodemailer are installed. Phase 6 uses OpenAI (`OPENAI_API_KEY`) for the welcome email intro and digest summaries, in place of the tutorial's Gemini. There is no SDK: every AI call goes through `generateText` in `lib/ai/index.ts`, which tries `gpt-5-nano` (cheapest, but deprecated by OpenAI) and then `gpt-6-luna`, each at its lowest reasoning effort, and returns a failure instead of throwing so callers fall back to plain text. Pass an `accept` check for anything the text must not say (the welcome intro rejects real-time or live price claims), because a rejected answer goes to the next model. Check `package.json` before assuming a dependency is installed.
 
 ## Rules for new code
 

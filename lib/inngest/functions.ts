@@ -28,7 +28,7 @@ export const welcomeEmail = inngest.createFunction(
 
     const intro = await step.run("write-intro", () => writeWelcomeIntro(profile));
     const sent = await step.run("send-email", () => deliverWelcomeEmail(userId, intro.text));
-    return { introSource: intro.source, sent };
+    return { introSource: intro.source, model: intro.model, sent };
   },
 );
 

@@ -18,11 +18,11 @@ export type WelcomeProfile = {
   preferredIndustry: string;
 };
 
-export type WelcomeIntro = { text: string; source: "ai" | "fallback" };
+export type WelcomeIntro = { text: string; source: "ai" | "fallback"; model: string | null };
 
 const MAX_INTRO_LENGTH = 600;
 
-const INSTRUCTIONS = `You write the opening paragraph of a welcome email for OpenWatch, a read-only stock market dashboard with watchlists, price alerts, a chart scanner and day-trading planning tools. Write 2 or 3 short, friendly sentences in plain text, addressed to "you". Tie it to the reader's profile. Do not recommend, name or rank any stock, fund or sector to buy or sell, do not predict prices, and do not give financial advice. No greeting line, no sign-off, no markdown, no links.`;
+const INSTRUCTIONS = `You write the opening paragraph of a welcome email for OpenWatch, a read-only stock market dashboard. Facts you may use: it has watchlists, email price alerts, a chart scanner and day-trading planning tools; its prices are delayed, so if you mention prices, call them delayed; it never places orders. Write 2 or 3 short, friendly sentences in plain text, addressed to "you", tied to the reader's profile. Describe only what the reader can do with these tools, and don't claim anything is already set up or curated for them. Do not recommend, name or rank any stock, fund or sector to buy or sell, do not predict prices, and do not give financial advice. The email already greets the reader, so start straight away without "Welcome" or "Hi". No sign-off, no markdown, no links.`;
 
 const listFormat = new Intl.ListFormat("en", { type: "conjunction" });
 
@@ -44,20 +44,34 @@ export const fallbackIntro = (profile: WelcomeProfile) => {
   return `OpenWatch keeps the ${label} market in one place: a watchlist, price alerts, a chart scanner and trade-planning tools. You picked ${profile.investmentGoals.toLowerCase()} as your goal, ${profile.riskTolerance.toLowerCase()} risk tolerance and ${profile.preferredIndustry} as your preferred industry, so a good first step is adding the stocks you already follow to your watchlist.`;
 };
 
-// Collapses whitespace and drops markdown bold. Anything empty or too long falls
-// back rather than being cut mid-sentence.
-const cleanIntro = (text: string) => {
-  const cleaned = text.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
-  return cleaned && cleaned.length <= MAX_INTRO_LENGTH ? cleaned : null;
+// Collapses whitespace and drops markdown bold.
+const cleanIntro = (text: string) => text.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+
+// Free market data is delayed, so an intro promising live prices is wrong. Too
+// long or empty text is rejected rather than cut mid-sentence. A rejected answer
+// goes to the next model, then to the plain fallback. Negated phrases such as
+// "delayed, not real-time" are correct, so they are removed before the check.
+const NEGATED_LIVE = /\b(?:not|never|no|isn['’]t|aren['’]t)\s+(?:real[- ]?time|live)(?:\s+or\s+(?:real[- ]?time|live))?\b/gi;
+const LIVE_PRICE_CLAIM = /\breal[- ]?time\b|\blive\s+(prices?|quotes?|data|market|updates?)\b/i;
+export const isUsableIntro = (text: string) => {
+  const cleaned = cleanIntro(text);
+  return (
+    cleaned.length > 0 &&
+    cleaned.length <= MAX_INTRO_LENGTH &&
+    !LIVE_PRICE_CLAIM.test(cleaned.replace(NEGATED_LIVE, ""))
+  );
 };
 
 export const writeWelcomeIntro = async (profile: WelcomeProfile): Promise<WelcomeIntro> => {
-  const result = await generateText({ instructions: INSTRUCTIONS, input: welcomePrompt(profile) });
-  const text = result.ok ? cleanIntro(result.text) : null;
-  if (text) return { text, source: "ai" };
+  const result = await generateText({
+    instructions: INSTRUCTIONS,
+    input: welcomePrompt(profile),
+    accept: isUsableIntro,
+  });
+  if (result.ok) return { text: cleanIntro(result.text), source: "ai", model: result.model };
 
-  console.warn("Welcome intro fell back to plain text:", result.ok ? "unusable AI text" : result.reason);
-  return { text: fallbackIntro(profile), source: "fallback" };
+  console.warn("Welcome intro fell back to plain text:", result.reason);
+  return { text: fallbackIntro(profile), source: "fallback", model: null };
 };
 
 const findUser = async (userId: string, projection: Record<string, 1>) => {
