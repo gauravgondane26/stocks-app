@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { safeNextPath } from "@/lib/auth-path";
 import { getAuth } from "@/lib/better-auth/auth";
+import { getCurrentMarket } from "@/lib/market/current";
 import { allowRequest, clientIp } from "@/lib/rate-limit";
 import { validateSignIn, validateSignUp } from "@/lib/validation/auth";
 import { queueWelcomeEmail } from "@/lib/welcome";
@@ -35,7 +36,7 @@ export const signUpWithEmail = async (
   const result = validateSignUp(input);
   if (!result.valid) return { error: result.error };
 
-  const { fullName, email, password, ...profile } = result.data;
+  const { fullName, email, password } = result.data;
 
   const requestHeaders = await headers();
   if (!allowRequest(`sign-up:ip:${clientIp(requestHeaders)}`, SIGN_UPS_PER_IP, SIGN_UP_WINDOW_MS)) {
@@ -46,7 +47,7 @@ export const signUpWithEmail = async (
   try {
     const auth = await getAuth();
     const { user } = await auth.api.signUpEmail({
-      body: { name: fullName, email, password, ...profile },
+      body: { name: fullName, email, password },
       headers: requestHeaders,
     });
     userId = user.id;
@@ -59,7 +60,7 @@ export const signUpWithEmail = async (
     return { error: GENERIC_ERROR };
   }
 
-  await queueWelcomeEmail(userId);
+  await queueWelcomeEmail(userId, await getCurrentMarket());
 
   // redirect() works by throwing, so it has to stay outside the try block.
   redirect(safeNextPath(next));

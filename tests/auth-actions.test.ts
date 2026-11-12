@@ -21,6 +21,7 @@ vi.mock("@/lib/better-auth/auth", () => ({
   getAuth: async () => ({ api: { signInEmail: mocks.signInEmail, signUpEmail: mocks.signUpEmail } }),
 }));
 vi.mock("@/lib/welcome", () => ({ queueWelcomeEmail: mocks.queueWelcomeEmail }));
+vi.mock("@/lib/market/current", () => ({ getCurrentMarket: async () => "IN" }));
 
 const { signInWithEmail, signUpWithEmail } = await import("@/lib/actions/auth.actions");
 
@@ -81,10 +82,6 @@ describe("signUpWithEmail", () => {
     fullName: "New User",
     email: "new@example.com",
     password: "password123",
-    country: "US",
-    investmentGoals: "Growth",
-    riskTolerance: "Medium",
-    preferredIndustry: "Technology",
   };
 
   it("allows 5 sign-ups per IP an hour, each queueing a welcome email", async () => {
@@ -95,6 +92,17 @@ describe("signUpWithEmail", () => {
     expect(await signUpWithEmail({ ...input, email: "new5@example.com" })).toEqual(TOO_MANY);
     expect(mocks.signUpEmail).toHaveBeenCalledTimes(5);
     expect(mocks.queueWelcomeEmail).toHaveBeenCalledTimes(5);
+  });
+
+  it("sends Better Auth only the name, email and password, and welcomes them to their market", async () => {
+    mocks.ip = "192.0.2.85";
+    await expect(signUpWithEmail({ ...input, email: "only@example.com" })).rejects.toThrow(/^redirect:\/$/);
+    expect(mocks.signUpEmail.mock.calls[0][0].body).toEqual({
+      name: "New User",
+      email: "only@example.com",
+      password: "password123",
+    });
+    expect(mocks.queueWelcomeEmail).toHaveBeenCalledWith("new-user", "IN");
   });
 
   it("goes back to the page the guest came from", async () => {

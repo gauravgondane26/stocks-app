@@ -1,5 +1,3 @@
-import type { MarketId } from "@/lib/market/types";
-
 // `needsAccount` pages open the sign-in dialog for guests instead of navigating.
 export const NAV_ITEMS: { href: string; label: string; needsAccount?: boolean }[] = [
   { href: "/", label: "Dashboard" },
@@ -8,43 +6,6 @@ export const NAV_ITEMS: { href: string; label: string; needsAccount?: boolean }[
   { href: "/scanner", label: "Scanner" },
   { href: "/settings", label: "Settings", needsAccount: true },
 ];
-
-// Sign-up form select options
-export const INVESTMENT_GOALS = [
-  { value: "Growth", label: "Growth" },
-  { value: "Income", label: "Income" },
-  { value: "Balanced", label: "Balanced" },
-  { value: "Conservative", label: "Conservative" },
-  { value: "Active trading", label: "Active trading" },
-];
-
-export const RISK_TOLERANCE_OPTIONS = [
-  { value: "Low", label: "Low" },
-  { value: "Medium", label: "Medium" },
-  { value: "High", label: "High" },
-];
-
-// Per market, from the sign-up country (marketForCountry). The Indian list follows
-// NSE's sectoral indices (owner's choice, 2026-11-11).
-export const PREFERRED_INDUSTRIES: Record<MarketId, Option[]> = {
-  US: [
-    { value: "Technology", label: "Technology" },
-    { value: "Healthcare", label: "Healthcare" },
-    { value: "Finance", label: "Finance" },
-    { value: "Energy", label: "Energy" },
-    { value: "Consumer Goods", label: "Consumer Goods" },
-  ],
-  IN: [
-    { value: "IT", label: "IT" },
-    { value: "Banking & Financial Services", label: "Banking & Financial Services" },
-    { value: "Pharma & Healthcare", label: "Pharma & Healthcare" },
-    { value: "FMCG", label: "FMCG" },
-    { value: "Auto", label: "Auto" },
-    { value: "Energy (Oil, Gas & Power)", label: "Energy (Oil, Gas & Power)" },
-    { value: "Metals", label: "Metals" },
-    { value: "Infrastructure & Capital Goods", label: "Infrastructure & Capital Goods" },
-  ],
-};
 
 export const ALERT_TYPE_OPTIONS = [
   { value: "above", label: "Price at or above" },

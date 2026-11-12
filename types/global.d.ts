@@ -27,18 +27,6 @@ declare global {
     fullName: string;
     email: string;
     password: string;
-    country: string;
-    investmentGoals: string;
-    riskTolerance: string;
-    preferredIndustry: string;
-  };
-
-  type CountrySelectProps<T extends FieldValues> = {
-    name: Path<T>;
-    label: string;
-    control: Control<T>;
-    error?: FieldError;
-    required?: boolean;
   };
 
   type FormInputProps<T extends FieldValues> = {
@@ -92,7 +80,6 @@ declare global {
     id: string;
     name: string;
     email: string;
-    country: string;
   };
 
   type SearchStock = StockSearchResult & {

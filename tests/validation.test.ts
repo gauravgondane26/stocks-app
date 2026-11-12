@@ -3,27 +3,19 @@ import { describe, expect, it } from "vitest";
 import { validateSignIn, validateSignUp } from "@/lib/validation/auth";
 
 describe("validateSignUp", () => {
-  const base = { fullName: "Test User", email: "T@Example.com ", password: "password123", riskTolerance: "Medium" };
+  const base = { fullName: "Test User", email: "T@Example.com ", password: "password123" };
 
-  it.each([
-    ["India with an NSE sector and Active trading", { country: "IN", investmentGoals: "Active trading", preferredIndustry: "Banking & Financial Services" }, true],
-    ["India with a US industry", { country: "IN", investmentGoals: "Growth", preferredIndustry: "Technology" }, false],
-    ["US with an NSE sector", { country: "US", investmentGoals: "Growth", preferredIndustry: "FMCG" }, false],
-    ["US with a US industry", { country: "US", investmentGoals: "Income", preferredIndustry: "Technology" }, true],
-    ["GB, which uses the US market, with a US industry", { country: "GB", investmentGoals: "Growth", preferredIndustry: "Energy" }, true],
-  ])("%s", (_, profile, valid) => {
-    expect(validateSignUp({ ...base, ...profile }).valid).toBe(valid);
+  it("needs only a name, email and password, and keeps only those", () => {
+    const result = validateSignUp({ ...base, country: "IN", riskTolerance: "High" });
+    expect(result).toEqual({
+      valid: true,
+      data: { fullName: "Test User", email: "t@example.com", password: "password123" },
+    });
   });
 
-  it("trims and lower-cases the email", () => {
-    const result = validateSignUp({ ...base, country: "US", investmentGoals: "Growth", preferredIndustry: "Technology" });
-    expect(result.valid && result.data.email).toBe("t@example.com");
-  });
-
-  it("refuses short passwords and unknown countries", () => {
-    const profile = { country: "US", investmentGoals: "Growth", preferredIndustry: "Technology" };
-    expect(validateSignUp({ ...base, ...profile, password: "short" }).valid).toBe(false);
-    expect(validateSignUp({ ...base, ...profile, country: "XX" }).valid).toBe(false);
+  it("refuses a missing name and a short password", () => {
+    expect(validateSignUp({ ...base, fullName: " " }).valid).toBe(false);
+    expect(validateSignUp({ ...base, password: "short" }).valid).toBe(false);
   });
 
   it("refuses input that isn't an object of strings", () => {

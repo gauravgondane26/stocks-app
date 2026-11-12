@@ -1,23 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
-import CountrySelectField from "@/components/forms/CountrySelectField";
 import FooterLink from "@/components/forms/FooterLink";
 import InputField from "@/components/forms/InputField";
-import SelectField from "@/components/forms/SelectField";
 import { Button } from "@/components/ui/button";
 import { signUpWithEmail } from "@/lib/actions/auth.actions";
 import { authPath } from "@/lib/auth-path";
 import { isNextNavigation } from "@/lib/navigation-error";
-import {
-  INVESTMENT_GOALS,
-  PREFERRED_INDUSTRIES,
-  RISK_TOLERANCE_OPTIONS,
-} from "@/lib/constants";
-import { marketForCountry } from "@/lib/market/markets";
 import {
   EMAIL_PATTERN,
   NAME_MAX_LENGTH,
@@ -30,37 +21,17 @@ const SignUpForm = ({ next, onSwitch }: AuthFormProps) => {
   const {
     register,
     handleSubmit,
-    control,
-    getValues,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<SignUpFormData>({
     defaultValues: {
       fullName: "",
       email: "",
       password: "",
-      country: "US",
-      investmentGoals: "Growth",
-      riskTolerance: "Medium",
-      preferredIndustry: "Technology",
     },
     // Not on blur: an error appearing as focus leaves a field shifts the footer
     // link mid-click, so "Create one" or "Sign in" would miss.
     mode: "onSubmit",
   });
-
-  // Industries depend on the market the country maps to. When the country moves to
-  // the other market, the old industry isn't in the new list, so pick its first one.
-  const industries =
-    PREFERRED_INDUSTRIES[
-      marketForCountry(useWatch({ control, name: "country" }))
-    ];
-  useEffect(() => {
-    const current = getValues("preferredIndustry");
-    if (!industries.some(({ value }) => value === current)) {
-      setValue("preferredIndustry", industries[0].value);
-    }
-  }, [industries, getValues, setValue]);
 
   const onSubmit: SubmitHandler<SignUpFormData> = async (data) => {
     try {
@@ -122,40 +93,6 @@ const SignUpForm = ({ next, onSwitch }: AuthFormProps) => {
             message: `Password must be at most ${PASSWORD_MAX_LENGTH} characters`,
           },
         }}
-      />
-      <CountrySelectField
-        name="country"
-        label="Country"
-        control={control}
-        error={errors.country}
-        required
-      />
-      <SelectField
-        name="investmentGoals"
-        label="Investment Goals"
-        placeholder="Select your goal"
-        options={INVESTMENT_GOALS}
-        control={control}
-        error={errors.investmentGoals}
-        required
-      />
-      <SelectField
-        name="riskTolerance"
-        label="Risk Tolerance"
-        placeholder="Select your risk level"
-        options={RISK_TOLERANCE_OPTIONS}
-        control={control}
-        error={errors.riskTolerance}
-        required
-      />
-      <SelectField
-        name="preferredIndustry"
-        label="Preferred Industry"
-        placeholder="Select your preferred industry"
-        options={industries}
-        control={control}
-        error={errors.preferredIndustry}
-        required
       />
       <Button
         type="submit"

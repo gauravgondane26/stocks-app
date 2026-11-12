@@ -41,17 +41,9 @@ const createAuth = async () => {
       minPasswordLength: 8,
       autoSignIn: true,
     },
-    user: {
-      // Saved on the user because later phases need the default market and currency.
-      // `input: true` is safe here: there is no /api/auth route, so these values only
-      // arrive through the server actions, which validate them first.
-      additionalFields: {
-        country: { type: "string", required: true, input: true },
-        investmentGoals: { type: "string", required: true, input: true },
-        riskTolerance: { type: "string", required: true, input: true },
-        preferredIndustry: { type: "string", required: true, input: true },
-      },
-    },
+    // Sign-up asks only for name, email and password. Accounts made before
+    // 2026-11-12 also hold country, investmentGoals, riskTolerance and
+    // preferredIndustry from the old form; nothing reads them now.
     // nextCookies must stay last so it can set cookies from server actions.
     plugins: [nextCookies()],
   });
