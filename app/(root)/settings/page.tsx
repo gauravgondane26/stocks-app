@@ -6,7 +6,7 @@ import { getCurrentMarket } from "@/lib/market/current";
 import { MARKETS } from "@/lib/market/markets";
 
 const SettingsPage = async () => {
-  await requireUser();
+  await requireUser("/settings");
 
   const market = await getCurrentMarket();
   const [{ settings }, email] = await Promise.all([getTradeSettings(market), getEmailSettings()]);

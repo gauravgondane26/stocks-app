@@ -45,13 +45,14 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 **Server code**
 
 - Keep API keys server-side. Never add a `NEXT_PUBLIC_` variable for a data or AI key. Modules that read a key start with `import 'server-only'`.
-- Server actions read the user id from the session and validate their input. Rate-limit the expensive ones (Time Machine, scanner, search).
-- Protect routes through `lib/better-auth/session.ts`: `getCurrentUser()` returns the user or null, and `requireUser()` redirects to `/sign-in`. `(root)/layout.tsx` calls `requireUser()`, and `(auth)/layout.tsx` redirects to `/` when there is a session. Layouts don't re-render on client-side navigation, so every protected page must also call `requireUser()` itself. Auth runs through server actions that call `auth.api` directly, so no `/api/auth` route is needed. There is deliberately no `proxy.ts` (Next 16's replacement for `middleware`); before adding one, read `node_modules/next/dist/docs/01-app/02-guides/authentication.md`.
+- Server actions read the user id from the session and validate their input. Rate-limit the expensive ones (Time Machine, scanner, search). Actions guests can use (search, Time Machine) limit through `allowCaller`, which limits a signed-in person by user id and a guest by IP plus a shared cap for all guests.
+- Guests can browse without an account: the dashboard, stock pages (trade plan and Time Machine included), search and the scheduled scans. An account is needed for anything saved per person: the watchlist, alerts, settings and running a scan. Sessions come from `lib/better-auth/session.ts`: `getCurrentUser()` returns the user or null, and `requireUser(path)` redirects to `/sign-in?next=<path>`. `(root)/layout.tsx` only reads the user, so a page that needs an account calls `requireUser()` with its own path (layouts don't re-render on client-side navigation anyway). On public pages, buttons that need an account take `signedIn` and render a link from `useAuthHref()` instead. The sign-in and sign-up actions redirect to `next` only after `safeNextPath` in `lib/auth-path.ts` confirms it's a path on this site. `(auth)/layout.tsx` redirects to `/` when there is a session, and signing out goes to `/`. Auth runs through server actions that call `auth.api` directly, so no `/api/auth` route is needed. There is deliberately no `proxy.ts` (Next 16's replacement for `middleware`); before adding one, read `node_modules/next/dist/docs/01-app/02-guides/authentication.md`.
 - Better Auth's Mongo adapter does not create indexes for its fields, so `ensureAuthIndexes` in `lib/better-auth/auth.ts` does. Add to it if a new auth field needs one.
 - Get the auth instance with `await getAuth()` from `lib/better-auth/auth.ts`, and the database with `connectToDatabase()` from `database/mongoose.ts`. Both connect on first use, so `next build` never needs a database. Secrets live in `.env.local` (see `.env.example`).
 - `bufferCommands` is off, so Mongoose models are compiled after connecting, behind an async getter such as `getWatchlistModel()` in `database/models/watchlist.model.ts`. It also awaits `model.init()` so unique indexes exist before the first write.
 - Functions that take a user id, like those in `lib/watchlist.ts`, must never be exported from a `"use server"` file, because any client could call them with someone else's id. Actions get the id from the session and call them.
 - `allowRequest` in `lib/rate-limit.ts` is a per-instance, in-memory limit. It stops runaway clients but isn't an exact quota on serverless hosting.
+- When a server action redirects, Next rejects the action's promise on the client with its redirect error after navigating. A client `catch` that shows a toast must skip it with `isNextNavigation()` from `lib/navigation-error.ts`, or every successful sign-in reports an error.
 - Better Auth's own rate limiter only covers its HTTP handler, not `auth.api` calls, so `signInWithEmail` and `signUpWithEmail` limit themselves (sign-in per email and per IP, sign-up per IP). `clientIp()` reads the headers Vercel sets.
 - Vercel Hobby allows functions 300 s with Fluid compute. Long work sets `export const maxDuration = 300`: the Inngest route (the scheduled scan is one step) and the `/scanner` page (its "Run now" server action). A server action takes the limit of the page it runs on.
 
@@ -116,11 +117,11 @@ app/
     sign-in/, sign-up/
 ```
 
-The `(root)` route group is for pages that will require a session, and `(auth)` is for the sign-in and sign-up pages. Future protected routes go inside `(root)/`. `/search` in `NAV_ITEMS` is not a page: `NavItems` renders it as a button that opens the search dialog.
+The `(root)` route group holds the app's pages, public or not (see the guest rules above), and `(auth)` holds the sign-in and sign-up pages. New pages go inside `(root)/`. `/search` in `NAV_ITEMS` is not a page: `NavItems` renders it as a button that opens the search dialog.
 
 ### Components
 
-`components/ui/` holds Base UI primitives styled with CVA — treat them like shadcn components. `NavItems` and `UserDropdown` are `"use client"` because they use `usePathname`/`useRouter`.
+`components/ui/` holds Base UI primitives styled with CVA — treat them like shadcn components. `NavItems`, `UserDropdown` and `GuestMenu` are `"use client"` because they use `usePathname`/`useRouter`. The header shows the nav row from `lg` up; below that, it moves into the user or guest menu (`NavItems variant="menu"`), and below `md` so does the market switcher.
 
 `SearchCommand` is mounted once, in `Header`. Open it from anywhere with `openSearch()` in `lib/search-events.ts`, not with a second instance: a dialog inside the mobile menu would unmount when the menu closes.
 

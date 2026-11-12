@@ -87,9 +87,10 @@ export const getWatchlist = async (
   }
 };
 
-// A database failure reads as "not watched" so the stock page can still load.
+// A guest, or a database failure, reads as "not watched" so the stock page still loads.
 export const isInWatchlist = async (input: unknown): Promise<boolean> => {
-  const user = await requireUser();
+  const user = await getCurrentUser();
+  if (!user) return false;
 
   const result = validateWatchlistKey(input);
   if (!result.valid) return false;

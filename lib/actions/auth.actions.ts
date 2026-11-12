@@ -4,6 +4,7 @@ import { APIError } from "better-auth/api";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { safeNextPath } from "@/lib/auth-path";
 import { getAuth } from "@/lib/better-auth/auth";
 import { allowRequest, clientIp } from "@/lib/rate-limit";
 import { validateSignIn, validateSignUp } from "@/lib/validation/auth";
@@ -26,8 +27,10 @@ const SIGN_UPS_PER_IP = 5;
 const getErrorCode = (error: unknown): string | undefined =>
   error instanceof APIError ? error.body?.code : undefined;
 
+// `next` is where the person was going when they were asked to sign in.
 export const signUpWithEmail = async (
   input: SignUpFormData,
+  next?: unknown,
 ): Promise<AuthActionError | void> => {
   const result = validateSignUp(input);
   if (!result.valid) return { error: result.error };
@@ -59,11 +62,12 @@ export const signUpWithEmail = async (
   await queueWelcomeEmail(userId);
 
   // redirect() works by throwing, so it has to stay outside the try block.
-  redirect("/");
+  redirect(safeNextPath(next));
 };
 
 export const signInWithEmail = async (
   input: SignInFormData,
+  next?: unknown,
 ): Promise<AuthActionError | void> => {
   const result = validateSignIn(input);
   if (!result.valid) return { error: result.error };
@@ -91,7 +95,7 @@ export const signInWithEmail = async (
     return { error: GENERIC_ERROR };
   }
 
-  redirect("/");
+  redirect(safeNextPath(next));
 };
 
 export const signOut = async (): Promise<AuthActionError | void> => {
@@ -103,5 +107,6 @@ export const signOut = async (): Promise<AuthActionError | void> => {
     return { error: GENERIC_ERROR };
   }
 
-  redirect("/sign-in");
+  // Guests can browse, so signing out stays in the app.
+  redirect("/");
 };

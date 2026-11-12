@@ -58,7 +58,15 @@ describe("signInWithEmail", () => {
   it("redirects home on success", async () => {
     mocks.ip = "192.0.2.60";
     mocks.signInEmail.mockResolvedValueOnce({});
-    await expect(signInWithEmail({ email: "ok@example.com", password: "password" })).rejects.toThrow("redirect:/");
+    await expect(signInWithEmail({ email: "ok@example.com", password: "password" })).rejects.toThrow(/^redirect:\/$/);
+  });
+
+  it("goes back to the page the guest came from, but only on this site", async () => {
+    mocks.ip = "192.0.2.61";
+    const ok = { email: "ok@example.com", password: "password" };
+    mocks.signInEmail.mockResolvedValue({});
+    await expect(signInWithEmail(ok, "/stocks/IN/RELIANCE")).rejects.toThrow(/^redirect:\/stocks\/IN\/RELIANCE$/);
+    await expect(signInWithEmail(ok, "//evil.example")).rejects.toThrow(/^redirect:\/$/);
   });
 
   it("doesn't count invalid input", async () => {
@@ -87,5 +95,10 @@ describe("signUpWithEmail", () => {
     expect(await signUpWithEmail({ ...input, email: "new5@example.com" })).toEqual(TOO_MANY);
     expect(mocks.signUpEmail).toHaveBeenCalledTimes(5);
     expect(mocks.queueWelcomeEmail).toHaveBeenCalledTimes(5);
+  });
+
+  it("goes back to the page the guest came from", async () => {
+    mocks.ip = "192.0.2.90";
+    await expect(signUpWithEmail(input, "/watchlist")).rejects.toThrow(/^redirect:\/watchlist$/);
   });
 });

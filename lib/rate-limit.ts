@@ -37,3 +37,23 @@ export const clientIp = (requestHeaders: Headers): string =>
   requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
   requestHeaders.get("x-real-ip")?.trim() ||
   "unknown";
+
+export type Caller = { userId: string } | { ip: string };
+
+type CallerLimits = { perCaller: number; allGuests: number; windowMs: number };
+
+// Signed-in people are limited by user id. Guests are limited per IP and, since an
+// IP limit alone can be dodged, all guests together also share one limit, which
+// keeps guest traffic from using up a data source that signed-in people rely on.
+export const allowCaller = (
+  scope: string,
+  caller: Caller,
+  { perCaller, allGuests, windowMs }: CallerLimits,
+): boolean => {
+  if ("userId" in caller) return allowRequest(`${scope}:${caller.userId}`, perCaller, windowMs);
+
+  return (
+    allowRequest(`${scope}:ip:${caller.ip}`, perCaller, windowMs) &&
+    allowRequest(`${scope}:guests`, allGuests, windowMs)
+  );
+};

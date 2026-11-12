@@ -15,6 +15,9 @@ declare global {
     error: string;
   };
 
+  // The sign-in and sign-up pages' query string.
+  type AuthSearchParams = { next?: string | string[] };
+
   type SignInFormData = {
     email: string;
     password: string;

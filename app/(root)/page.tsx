@@ -1,11 +1,8 @@
 import TradingViewWidget from "@/components/TradingViewWidget";
-import { requireUser } from "@/lib/better-auth/session";
 import { getCurrentMarket } from "@/lib/market/current";
 import { getDashboardConfig } from "@/lib/market/dashboard";
 
 const Home = async () => {
-  await requireUser();
-
   const market = await getCurrentMarket();
   const { overview, heatmap, topStories, quotes } = getDashboardConfig(market);
 

@@ -1,9 +1,11 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
+import useAuthHref from "@/hooks/useAuthHref";
 import {
   addToWatchlist,
   removeFromWatchlist,
@@ -18,6 +20,8 @@ type WatchlistButtonProps = {
   company: string;
   isInWatchlist: boolean;
   variant?: "button" | "icon";
+  // A guest gets a link to sign in, which comes back to this page.
+  signedIn?: boolean;
 };
 
 const WatchlistButton = ({
@@ -25,7 +29,9 @@ const WatchlistButton = ({
   company,
   isInWatchlist,
   variant = "button",
+  signedIn = true,
 }: WatchlistButtonProps) => {
+  const signInHref = useAuthHref();
   // Falls back to the server's value when the transition ends, so a failure undoes itself.
   const [isWatched, setIsWatched] = useOptimistic(isInWatchlist);
   const [isPending, startTransition] = useTransition();
@@ -54,6 +60,17 @@ const WatchlistButton = ({
       }
     });
   };
+
+  if (!signedIn) {
+    return (
+      <Link
+        href={signInHref}
+        className="watchlist-btn flex items-center justify-center px-6"
+      >
+        Add to Watchlist
+      </Link>
+    );
+  }
 
   if (variant === "icon") {
     return (
