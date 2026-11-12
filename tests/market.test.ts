@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { getMarketClock, hasHolidayData, isMarketOpen, isTradingDay } from "@/lib/market/hours";
+import { MARKET_CALENDARS } from "@/lib/market/holidays";
+import {
+  getMarketClock,
+  hasHolidayData,
+  holidayDataEnd,
+  isMarketOpen,
+  isTradingDay,
+} from "@/lib/market/hours";
 import { describeMarket, isMarketId, marketForCountry } from "@/lib/market/markets";
 import { parseTicker, stockPath, symbolFromRoute, toTradingView, toYahoo } from "@/lib/market/symbols";
 import { getSessionTimes } from "@/lib/trade/session";
@@ -51,6 +58,13 @@ describe("market hours", () => {
     expect(hasHolidayData("IN", at("2026-12-31T12:00:00+05:30"))).toBe(true);
     expect(hasHolidayData("IN", at("2027-01-01T12:00:00+05:30"))).toBe(false);
     expect(hasHolidayData("US", at("2028-12-31T12:00:00-05:00"))).toBe(true);
+  });
+
+  it("gives a calendar's last date once the market's own date passes it", () => {
+    const end = MARKET_CALENDARS.IN.knownThrough;
+    expect(holidayDataEnd("IN", at(`${end}T12:00:00+05:30`))).toBeNull();
+    // 20:00 UTC on the last day is already the next day in India.
+    expect(holidayDataEnd("IN", at(`${end}T20:00:00Z`))).toBe(end);
   });
 });
 

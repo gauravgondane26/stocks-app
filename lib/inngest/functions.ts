@@ -14,7 +14,7 @@ import {
 } from "@/lib/digest";
 import { wantsEmail } from "@/lib/email-settings";
 import { inngest } from "@/lib/inngest/client";
-import { isTradingDay } from "@/lib/market/hours";
+import { holidayDataEnd, isTradingDay } from "@/lib/market/hours";
 import { isMarketId, MARKET_IDS, MARKETS } from "@/lib/market/markets";
 import type { MarketId } from "@/lib/market/types";
 import { allWatchlistSymbols, buildUniverse, runScan, saveScan } from "@/lib/scanner";
@@ -41,6 +41,19 @@ export const welcomeEmail = inngest.createFunction(
   },
 );
 
+// Past a holiday calendar's last date, isTradingDay can't see holidays, so a job may
+// run on a closed day. The run's output and the logs say so until holidays.ts has the
+// new year's dates.
+const withCalendarWarnings = <T extends object>(markets: readonly MarketId[], result: T) => {
+  const warnings = markets.flatMap((market) => {
+    const end = holidayDataEnd(market);
+    return end ? [`${market} holiday data ends ${end}: add the new dates to lib/market/holidays.ts`] : [];
+  });
+  if (warnings.length === 0) return result;
+  for (const warning of warnings) console.warn(warning);
+  return { ...result, warnings };
+};
+
 // Every 5 minutes is about 17,000 executions a month with one step per run. The free
 // Inngest plan includes 50,000 (checked 2026-11-09). The event trigger is for testing
 // by hand. Market hours are decided inside the step, from the market config.
@@ -64,7 +77,7 @@ export const checkAlerts = inngest.createFunction(
       if (didRing) rang += 1;
     }
 
-    return { checked: candidates.length, rang };
+    return withCalendarWarnings(MARKET_IDS, { checked: candidates.length, rang });
   },
 );
 
@@ -101,7 +114,7 @@ export const digestSchedulers = MARKET_IDS.map((market) =>
         const { date, since } = digestWindow(market, now);
         return { date, since, userIds: await findDigestUserIds(market) };
       });
-      if (!plan) return { skipped: "market closed today" };
+      if (!plan) return withCalendarWarnings([market], { skipped: "market closed today" });
       if (plan.userIds.length > 0) {
         await step.sendEvent(
           "fan-out",
@@ -112,7 +125,7 @@ export const digestSchedulers = MARKET_IDS.map((market) =>
           })),
         );
       }
-      return { date: plan.date, users: plan.userIds.length };
+      return withCalendarWarnings([market], { date: plan.date, users: plan.userIds.length });
     },
   ),
 );
@@ -178,13 +191,15 @@ export const scanFunctions = MARKET_IDS.flatMap((market) =>
       async ({ step }) =>
         step.run("scan", async () => {
           const now = new Date();
-          if (!isTradingDay(market, now)) return { skipped: "market closed today" };
+          if (!isTradingDay(market, now)) {
+            return withCalendarWarnings([market], { skipped: "market closed today" });
+          }
 
           const universe = buildUniverse(market, await allWatchlistSymbols(market));
           const outcome = await runScan(market, mode, universe, now);
-          if (!outcome.ok) return { skipped: outcome.reason };
+          if (!outcome.ok) return withCalendarWarnings([market], { skipped: outcome.reason });
           await saveScan(outcome.scan, null);
-          return outcome.scan.counts;
+          return withCalendarWarnings([market], outcome.scan.counts);
         }),
     ),
   ),
