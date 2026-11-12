@@ -176,3 +176,17 @@ export const alertEmailHtml = ({
   <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">${NOTICE}</p>
   ${optOutHtml("alert emails", settingsUrl)}
 </div>`;
+
+const RESET_NOTICE =
+  "The link works once, for one hour. If you didn't ask to reset your password, ignore this email and your password stays the same.";
+
+export const resetPasswordEmailText = ({ name, resetUrl }: { name: string; resetUrl: string }) =>
+  `Hi ${name},\n\nSomeone asked to reset the password for your OpenWatch account. To choose a new one, open this link:\n\n${resetUrl}\n\n${RESET_NOTICE}\n`;
+
+export const resetPasswordEmailHtml = ({ name, resetUrl }: { name: string; resetUrl: string }) => `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111827;">
+  <p style="margin:0 0 4px;font-size:14px;color:#6b7280;">OpenWatch</p>
+  <h1 style="margin:0 0 16px;font-size:20px;">Hi ${escapeHtml(name)},</h1>
+  <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">Someone asked to reset the password for your OpenWatch account.</p>
+  <p style="margin:0 0 24px;"><a href="${escapeHtml(resetUrl)}" style="color:#b45309;">Choose a new password</a></p>
+  <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">${RESET_NOTICE}</p>
+</div>`;
