@@ -7,18 +7,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev      # start dev server (localhost:3000)
-npm run build    # production build
-npm run lint     # ESLint (eslint.config.mjs, next eslint config)
+npm run dev        # start dev server (localhost:3000)
+npm run build      # production build (needs no secrets)
+npm run lint       # ESLint (eslint.config.mjs, next eslint config)
+npm test           # Vitest, once; npm run test:watch to rerun on save
+npm run typecheck  # tsc --noEmit
 ```
 
-No test runner is configured (Phase 7 of the build plan adds one, likely Vitest). There is no typecheck script; use `npx tsc --noEmit`.
+CI (`.github/workflows/ci.yml`) runs lint, test, build, then typecheck on pull requests and pushes to `main`, on Node 26 (what the Vercel project runs).
+
+## Tests
+
+Tests live in `tests/*.test.ts` and cover pure code. `vitest.config.mts` maps `@/` to the repo root and aliases `server-only` to its empty build, so server modules import cleanly. Trade tool tests use the day-trader skill's fixtures in `tests/fixtures/skill` (MIT notice in its `LICENSE`); `tests/helpers/yahoo.ts` turns them into bars and close series. The Time Machine's history replay must match the Python run exactly, and its simulated odds within a tolerance. AI calls are tested by stubbing `fetch`, and server actions by mocking `next/headers`, `next/navigation` and `getAuth` (see `tests/auth-actions.test.ts`). Never call real APIs or the database from a test.
 
 ## Project status
 
 The app (OpenWatch, renamed from the tutorial's Signalist) started as a YouTube tutorial and is being extended to cover both US and Indian markets, with alerts and trade tools. It is a portfolio piece that a family member who trades also uses, so free and unofficial data sources are acceptable.
 
 `Stocks App Build Plan.md` is the roadmap and holds the task checklists. It is gitignored, so it exists only on the owner's machine and may be missing from other checkouts. Work one phase at a time, finish its "done when" line, and commit before starting the next. Update this file as each phase lands.
+
+Production runs at https://openwatch-phi.vercel.app (Vercel project `openwatch`, functions in `bom1` next to the Mumbai Atlas cluster, set in `vercel.json`). It shares the `openwatch` Atlas database with local development. Inngest Cloud reaches it through the Vercel integration, and the GitHub repo is connected, so merges to `main` deploy to production. `INNGEST_SERVE_ORIGIN` in Vercel makes the integration sync the public domain, because deployment URLs sit behind Vercel's deployment protection; `curl -X PUT https://openwatch-phi.vercel.app/api/inngest` resyncs by hand.
 
 Phases, in dependency order: 0 fixes and setup, 1 database and auth, 2 market data layer, 3 search, stock page and watchlist, 4 price alerts, 5 trade tools, 6 news, emails and digest, 7 tests and deploy. The plan's "Parked for later" items (F&O data, ICICI Breeze, an in-app Claude assistant) are out of scope.
 
@@ -44,6 +52,8 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 - `bufferCommands` is off, so Mongoose models are compiled after connecting, behind an async getter such as `getWatchlistModel()` in `database/models/watchlist.model.ts`. It also awaits `model.init()` so unique indexes exist before the first write.
 - Functions that take a user id, like those in `lib/watchlist.ts`, must never be exported from a `"use server"` file, because any client could call them with someone else's id. Actions get the id from the session and call them.
 - `allowRequest` in `lib/rate-limit.ts` is a per-instance, in-memory limit. It stops runaway clients but isn't an exact quota on serverless hosting.
+- Better Auth's own rate limiter only covers its HTTP handler, not `auth.api` calls, so `signInWithEmail` and `signUpWithEmail` limit themselves (sign-in per email and per IP, sign-up per IP). `clientIp()` reads the headers Vercel sets.
+- Vercel Hobby allows functions 300 s with Fluid compute. Long work sets `export const maxDuration = 300`: the Inngest route (the scheduled scan is one step) and the `/scanner` page (its "Run now" server action). A server action takes the limit of the page it runs on.
 
 **Markets and data**
 

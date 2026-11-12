@@ -1,7 +1,9 @@
-The trade tools in this folder (entry.ts, exit.ts, size.ts and risk.ts) are
-ported from https://github.com/Jakeschincariol/day-trader-skill
-(trader-entry/entry.py, trader-exit/exit.py, trader-budget/size.py and
-trader-risk/check.py), under this licence:
+The trade tools in this folder (entry.ts, exit.ts, size.ts, risk.ts,
+timemachine.ts and scanner.ts) are ported from
+https://github.com/Jakeschincariol/day-trader-skill (trader-entry/entry.py,
+trader-exit/exit.py, trader-budget/size.py, trader-risk/check.py,
+trader-timemachine/timemachine.py and trader-scanner/scan.py), under this
+licence:
 
 MIT License
 

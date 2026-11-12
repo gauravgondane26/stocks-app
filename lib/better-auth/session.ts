@@ -7,9 +7,12 @@ import { cache } from "react";
 import { getAuth } from "@/lib/better-auth/auth";
 
 // `cache` means a layout and page in the same request share one session lookup.
+// headers() comes first: it marks the page as dynamic, so `next build` stops trying
+// to prerender it before anything connects to the database.
 export const getCurrentUser = cache(async (): Promise<User | null> => {
+  const requestHeaders = await headers();
   const auth = await getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session) return null;
 
   const { id, name, email, country } = session.user;

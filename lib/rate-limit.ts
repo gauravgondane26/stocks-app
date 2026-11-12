@@ -29,3 +29,11 @@ export const allowRequest = (
   current.count += 1;
   return current.count <= limit;
 };
+
+// The caller's IP for rate-limit keys. Vercel sets both headers itself and drops any
+// value the client sent; behind another proxy x-forwarded-for can be spoofed, so
+// never let an IP limit be the only one protecting something.
+export const clientIp = (requestHeaders: Headers): string =>
+  requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+  requestHeaders.get("x-real-ip")?.trim() ||
+  "unknown";
