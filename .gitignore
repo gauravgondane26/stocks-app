@@ -41,5 +41,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local build plan
+# local notes and tool output
 Stocks App Build Plan.md
+/CLAUDE HANDOFFS/
+/.playwright-mcp/

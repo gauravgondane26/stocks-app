@@ -65,3 +65,8 @@ export const isMarketOpen = (market: MarketId, at: Date = new Date()) => {
 // longer see holidays.
 export const hasHolidayData = (market: MarketId, at: Date = new Date()) =>
   getLocalTime(market, at).date <= MARKET_CALENDARS[market].knownThrough;
+
+// The calendar's last date once `at` is past it, otherwise null. The layout shows a
+// notice and the jobs add a warning while it is set, until holidays.ts is updated.
+export const holidayDataEnd = (market: MarketId, at: Date = new Date()) =>
+  hasHolidayData(market, at) ? null : MARKET_CALENDARS[market].knownThrough;
