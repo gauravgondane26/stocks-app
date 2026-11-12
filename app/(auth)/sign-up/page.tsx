@@ -12,7 +12,7 @@ const SignUp = ({ searchParams }: { searchParams: Promise<AuthSearchParams> }) =
 
   return (
     <>
-      <h1 className="form-title">Sign Up and Personalize</h1>
+      <h1 className="form-title">Create your account</h1>
       <SignUpForm next={next} />
     </>
   );

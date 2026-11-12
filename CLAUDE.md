@@ -68,7 +68,7 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 - Spark drops single 5-minute bars at random, even for busy stocks (86 of 503 S&P stocks on 2026-11-10), while the chart endpoint (`bars`) has them. The breakout scan sends these gapped stocks to the full-chart check, but only in the room the clean candidates leave under the 200 cap, so clean results still match the skill.
 - Trade tools in `lib/trade/` are pure ports of the day-trader skill (MIT notice in `lib/trade/LICENSE`). The Time Machine's seeded generator differs from the original's Python one, so its odds match the original within a tolerance; the history replay matches exactly.
 - Yahoo's `chartPreviousClose` can be wrong, so `yahooProvider.quote` works out the previous close from daily bars.
-- `getCurrentMarket()` in `lib/market/current.ts` returns the active market (cookie, then sign-up country). Holiday data in `lib/market/holidays.ts` is copied from exchange sites, and NSE is only published through 2026. Past a calendar's `knownThrough` date, `isTradingDay` can't see holidays, so `holidayDataEnd()` in `lib/market/hours.ts` turns non-null, `HolidayDataNotice` shows a banner under the header, and the Inngest jobs add a `warnings` entry to their output. Add the next year's dates when the exchange publishes them.
+- `getCurrentMarket()` in `lib/market/current.ts` returns the active market: the switcher's cookie, then the visitor's location from Vercel's `x-vercel-ip-country` header, then US (the header is missing locally). Sign-up asks only for name, email and password; the welcome email gets the market from the sign-up request. Holiday data in `lib/market/holidays.ts` is copied from exchange sites, and NSE is only published through 2026. Past a calendar's `knownThrough` date, `isTradingDay` can't see holidays, so `holidayDataEnd()` in `lib/market/hours.ts` turns non-null, `HolidayDataNotice` shows a banner under the header, and the Inngest jobs add a `warnings` entry to their output. Add the next year's dates when the exchange publishes them.
 - Market-specific values (hours, holidays, currency, symbol suffixes, session times) come from `lib/market/markets.ts`. Don't hardcode `NASDAQ`, `09:30` or `$` in feature code.
 - Store symbols as `{ market, exchange, ticker }` and use the converters (`toTradingView()`, `toYahoo()`) to get each service's format. Format money with `Intl.NumberFormat` for the market's locale and currency.
 - US-only rules stay out of India's path, such as the pattern-day-trader guard in the risk check.
@@ -88,7 +88,7 @@ These come from the build plan. Older code such as the widget configs in `lib/co
 
 **Open questions for the owner**
 
-None open. Settled: the Indian flat-by time is 15:15 (`MARKETS.IN.tradeDefaults`). Sign-up industries are per market in `PREFERRED_INDUSTRIES` (India follows NSE's sectoral indices), and the investment goals, now including "Active trading", are shared by both markets.
+None open. Settled: the Indian flat-by time is 15:15 (`MARKETS.IN.tradeDefaults`). Sign-up no longer asks for country, investment goals, risk tolerance or industry (owner's choice, 2026-11-12); older accounts still hold those fields, unread.
 
 ## Stack
 

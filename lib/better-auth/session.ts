@@ -16,8 +16,8 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
   const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session) return null;
 
-  const { id, name, email, country } = session.user;
-  return { id, name, email, country };
+  const { id, name, email } = session.user;
+  return { id, name, email };
 });
 
 // Pages that need an account call this with their own path, so signing in comes
