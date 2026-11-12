@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -12,7 +13,12 @@ import { isNextNavigation } from "@/lib/navigation-error";
 import { EMAIL_PATTERN } from "@/lib/validation/auth";
 
 // Used by the /sign-in page and the sign-in dialog.
-const SignInForm = ({ next, onSwitch }: AuthFormProps) => {
+// In the dialog, `onForgot` swaps to the forgot-password form; on the page it's a link.
+const SignInForm = ({
+  next,
+  onSwitch,
+  onForgot,
+}: AuthFormProps & { onForgot?: () => void }) => {
   const {
     register,
     handleSubmit,
@@ -63,6 +69,17 @@ const SignInForm = ({ next, onSwitch }: AuthFormProps) => {
         error={errors.password}
         validation={{ required: "Enter your password" }}
       />
+      <div className="-mt-2 text-right text-sm">
+        {onForgot ? (
+          <button type="button" onClick={onForgot} className="footer-link cursor-pointer">
+            Forgot password?
+          </button>
+        ) : (
+          <Link href={authPath("/forgot-password", next)} className="footer-link">
+            Forgot password?
+          </Link>
+        )}
+      </div>
       <Button
         type="submit"
         disabled={isSubmitting}

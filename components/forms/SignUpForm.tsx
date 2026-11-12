@@ -16,27 +16,32 @@ import {
   PASSWORD_MIN_LENGTH,
 } from "@/lib/validation/auth";
 
+// The confirmation is only checked here and never sent to the server.
+type SignUpFormValues = SignUpFormData & { confirmPassword: string };
+
 // Used by the /sign-up page and the sign-in dialog.
 const SignUpForm = ({ next, onSwitch }: AuthFormProps) => {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors, isSubmitting },
-  } = useForm<SignUpFormData>({
+  } = useForm<SignUpFormValues>({
     defaultValues: {
       fullName: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
     // Not on blur: an error appearing as focus leaves a field shifts the footer
     // link mid-click, so "Create one" or "Sign in" would miss.
     mode: "onSubmit",
   });
 
-  const onSubmit: SubmitHandler<SignUpFormData> = async (data) => {
+  const onSubmit: SubmitHandler<SignUpFormValues> = async ({ fullName, email, password }) => {
     try {
       // On success the action redirects, so a returned value is always an error.
-      const result = await signUpWithEmail(data, next);
+      const result = await signUpWithEmail({ fullName, email, password }, next);
       if (result) toast.error(result.error);
     } catch (error) {
       if (isNextNavigation(error)) return;
@@ -92,6 +97,19 @@ const SignUpForm = ({ next, onSwitch }: AuthFormProps) => {
             value: PASSWORD_MAX_LENGTH,
             message: `Password must be at most ${PASSWORD_MAX_LENGTH} characters`,
           },
+        }}
+      />
+      <InputField
+        name="confirmPassword"
+        label="Confirm Password"
+        type="password"
+        placeholder="Type it again"
+        autoComplete="new-password"
+        register={register}
+        error={errors.confirmPassword}
+        validation={{
+          required: "Type the password again",
+          validate: (value) => value === getValues("password") || "Passwords don't match",
         }}
       />
       <Button

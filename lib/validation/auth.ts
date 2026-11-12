@@ -63,3 +63,32 @@ export const validateSignIn = (
 
   return { valid: true, data };
 };
+
+export const validatePasswordResetRequest = (
+  input: unknown,
+): ValidationResult<{ email: string }> => {
+  const raw = (input ?? {}) as Record<string, unknown>;
+  const email = asString(raw.email).trim().toLowerCase();
+  if (!EMAIL_PATTERN.test(email)) return { valid: false, error: "Enter a valid email address." };
+  return { valid: true, data: { email } };
+};
+
+const TOKEN_MAX_LENGTH = 200;
+
+export const validatePasswordReset = (
+  input: unknown,
+): ValidationResult<{ token: string; password: string }> => {
+  const raw = (input ?? {}) as Record<string, unknown>;
+  const token = asString(raw.token);
+  const password = asString(raw.password);
+  if (!token || token.length > TOKEN_MAX_LENGTH) {
+    return { valid: false, error: "This reset link isn't valid. Ask for a new one." };
+  }
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return { valid: false, error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.` };
+  }
+  if (password.length > PASSWORD_MAX_LENGTH) {
+    return { valid: false, error: `Password must be at most ${PASSWORD_MAX_LENGTH} characters.` };
+  }
+  return { valid: true, data: { token, password } };
+};

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import ForgotPasswordForm from "@/components/forms/ForgotPasswordForm";
 import SignInForm from "@/components/forms/SignInForm";
 import SignUpForm from "@/components/forms/SignUpForm";
 import {
@@ -14,7 +15,9 @@ import {
 import { OPEN_AUTH_EVENT, type AuthMode, type OpenAuthDetail } from "@/lib/auth-events";
 import { safeNextPath } from "@/lib/auth-path";
 
-const COPY: Record<AuthMode, { title: string; description: string }> = {
+type DialogMode = AuthMode | "forgot";
+
+const COPY: Record<DialogMode, { title: string; description: string }> = {
   "sign-in": {
     title: "Welcome back",
     description: "Sign in to keep a watchlist, set alerts and save your trade settings.",
@@ -22,6 +25,10 @@ const COPY: Record<AuthMode, { title: string; description: string }> = {
   "sign-up": {
     title: "Create your account",
     description: "It's free. Keep a watchlist, set alerts and save your trade settings.",
+  },
+  forgot: {
+    title: "Reset your password",
+    description: "Enter your account's email and we'll send you a link to choose a new password.",
   },
 };
 
@@ -31,7 +38,7 @@ const COPY: Record<AuthMode, { title: string; description: string }> = {
 const AuthDialog = () => {
   const [open, setOpen] = useState(false);
   // Kept after closing so the content doesn't vanish during the close animation.
-  const [mode, setMode] = useState<AuthMode>("sign-in");
+  const [mode, setMode] = useState<DialogMode>("sign-in");
   const [next, setNext] = useState("/");
 
   useEffect(() => {
@@ -58,10 +65,19 @@ const AuthDialog = () => {
           <DialogDescription className="text-gray-500">{description}</DialogDescription>
         </DialogHeader>
         {/* Keyed so switching forms starts the new one empty. */}
-        {mode === "sign-in" ? (
-          <SignInForm key="sign-in" next={next} onSwitch={() => setMode("sign-up")} />
-        ) : (
+        {mode === "sign-in" && (
+          <SignInForm
+            key="sign-in"
+            next={next}
+            onSwitch={() => setMode("sign-up")}
+            onForgot={() => setMode("forgot")}
+          />
+        )}
+        {mode === "sign-up" && (
           <SignUpForm key="sign-up" next={next} onSwitch={() => setMode("sign-in")} />
+        )}
+        {mode === "forgot" && (
+          <ForgotPasswordForm key="forgot" next={next} onSwitch={() => setMode("sign-in")} />
         )}
       </DialogContent>
     </Dialog>

@@ -6,6 +6,7 @@ import { nextCookies } from "better-auth/next-js";
 import type { Db } from "mongodb";
 
 import { connectToDatabase } from "@/database/mongoose";
+import { sendPasswordResetEmail } from "@/lib/nodemailer";
 
 const requireEnv = (name: string): string => {
   const value = process.env[name];
@@ -40,6 +41,21 @@ const createAuth = async () => {
       enabled: true,
       minPasswordLength: 8,
       autoSignIn: true,
+      resetPasswordTokenExpiresIn: 60 * 60,
+      // A reset signs out every other device, in case someone else had the password.
+      revokeSessionsOnPasswordReset: true,
+      // Better Auth's own link goes through /api/auth, which this app doesn't have,
+      // so the email links to the reset page with the token instead. A send failure
+      // is only logged: an error here would tell the caller that the email has an
+      // account.
+      sendResetPassword: async ({ user, token }) => {
+        const resetUrl = `${requireEnv("BETTER_AUTH_URL")}/reset-password?token=${encodeURIComponent(token)}`;
+        try {
+          await sendPasswordResetEmail({ to: user.email, name: user.name || "there", resetUrl });
+        } catch (error) {
+          console.error("Password reset email failed:", error instanceof Error ? error.message : error);
+        }
+      },
     },
     // Sign-up asks only for name, email and password. Accounts made before
     // 2026-11-12 also hold country, investmentGoals, riskTolerance and

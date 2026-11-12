@@ -18,7 +18,10 @@ export const safeNextPath = (value: unknown): string => {
 };
 
 // The sign-in or sign-up page, set to come back to `next` afterwards.
-export const authPath = (page: "/sign-in" | "/sign-up", next?: unknown): string => {
+export const authPath = (
+  page: "/sign-in" | "/sign-up" | "/forgot-password",
+  next?: unknown,
+): string => {
   const path = safeNextPath(next);
   return path === "/" ? page : `${page}?next=${encodeURIComponent(path)}`;
 };
