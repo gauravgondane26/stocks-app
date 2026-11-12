@@ -76,11 +76,10 @@ declare global {
   };
 
   // Shared by the sign-in and sign-up forms. In the dialog, `onSwitch` swaps to the
-  // other form and `onClose` closes it; on the full pages they're links instead.
+  // other form; on the full pages that's a link instead.
   type AuthFormProps = {
     next: string;
     onSwitch?: () => void;
-    onClose?: () => void;
   };
 
   type WelcomeEmailData = {

@@ -45,7 +45,6 @@ const AuthDialog = () => {
     return () => window.removeEventListener(OPEN_AUTH_EVENT, handleOpen);
   }, []);
 
-  const close = () => setOpen(false);
   const { title, description } = COPY[mode];
 
   return (
@@ -60,9 +59,9 @@ const AuthDialog = () => {
         </DialogHeader>
         {/* Keyed so switching forms starts the new one empty. */}
         {mode === "sign-in" ? (
-          <SignInForm key="sign-in" next={next} onSwitch={() => setMode("sign-up")} onClose={close} />
+          <SignInForm key="sign-in" next={next} onSwitch={() => setMode("sign-up")} />
         ) : (
-          <SignUpForm key="sign-up" next={next} onSwitch={() => setMode("sign-in")} onClose={close} />
+          <SignUpForm key="sign-up" next={next} onSwitch={() => setMode("sign-in")} />
         )}
       </DialogContent>
     </Dialog>

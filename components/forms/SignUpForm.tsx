@@ -26,7 +26,7 @@ import {
 } from "@/lib/validation/auth";
 
 // Used by the /sign-up page and the sign-in dialog.
-const SignUpForm = ({ next, onSwitch, onClose }: AuthFormProps) => {
+const SignUpForm = ({ next, onSwitch }: AuthFormProps) => {
   const {
     register,
     handleSubmit,
@@ -45,7 +45,7 @@ const SignUpForm = ({ next, onSwitch, onClose }: AuthFormProps) => {
       preferredIndustry: "Technology",
     },
     // Not on blur: an error appearing as focus leaves a field shifts the footer
-    // links mid-click, so "Create one" or "Keep browsing" would miss.
+    // link mid-click, so "Create one" or "Sign in" would miss.
     mode: "onSubmit",
   });
 
@@ -169,12 +169,6 @@ const SignUpForm = ({ next, onSwitch, onClose }: AuthFormProps) => {
         linkText="Sign in"
         href={authPath("/sign-in", next)}
         onClick={onSwitch}
-      />
-      <FooterLink
-        text="Just looking?"
-        linkText="Keep browsing"
-        href={next}
-        onClick={onClose}
       />
     </form>
   );

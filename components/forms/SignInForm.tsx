@@ -12,7 +12,7 @@ import { isNextNavigation } from "@/lib/navigation-error";
 import { EMAIL_PATTERN } from "@/lib/validation/auth";
 
 // Used by the /sign-in page and the sign-in dialog.
-const SignInForm = ({ next, onSwitch, onClose }: AuthFormProps) => {
+const SignInForm = ({ next, onSwitch }: AuthFormProps) => {
   const {
     register,
     handleSubmit,
@@ -20,7 +20,7 @@ const SignInForm = ({ next, onSwitch, onClose }: AuthFormProps) => {
   } = useForm<SignInFormData>({
     defaultValues: { email: "", password: "" },
     // Not on blur: an error appearing as focus leaves a field shifts the footer
-    // links mid-click, so "Create one" or "Keep browsing" would miss.
+    // link mid-click, so "Create one" or "Sign in" would miss.
     mode: "onSubmit",
   });
 
@@ -76,7 +76,6 @@ const SignInForm = ({ next, onSwitch, onClose }: AuthFormProps) => {
         href={authPath("/sign-up", next)}
         onClick={onSwitch}
       />
-      <FooterLink text="Just looking?" linkText="Keep browsing" href={next} onClick={onClose} />
     </form>
   );
 };
