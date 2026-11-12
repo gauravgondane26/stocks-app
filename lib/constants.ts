@@ -1,11 +1,12 @@
 import type { MarketId } from "@/lib/market/types";
 
-export const NAV_ITEMS = [
+// `needsAccount` pages open the sign-in dialog for guests instead of navigating.
+export const NAV_ITEMS: { href: string; label: string; needsAccount?: boolean }[] = [
   { href: "/", label: "Dashboard" },
   { href: "/search", label: "Search" },
-  { href: "/watchlist", label: "Watchlist" },
+  { href: "/watchlist", label: "Watchlist", needsAccount: true },
   { href: "/scanner", label: "Scanner" },
-  { href: "/settings", label: "Settings" },
+  { href: "/settings", label: "Settings", needsAccount: true },
 ];
 
 // Sign-up form select options

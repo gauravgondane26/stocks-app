@@ -1,7 +1,6 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -15,8 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import useAuthHref from "@/hooks/useAuthHref";
 import { createAlert } from "@/lib/actions/alert.actions";
+import { openAuth } from "@/lib/auth-events";
 import { describeAlert } from "@/lib/alerts/describe";
 import { alertValueKind, type AlertRule } from "@/lib/alerts/types";
 import { ALERT_TYPE_OPTIONS } from "@/lib/constants";
@@ -51,10 +50,9 @@ const CreateAlertButton = ({
   symbol: StockSymbol;
   company: string;
   className?: string;
-  // A guest gets a link to sign in, which comes back to this page.
+  // A guest gets the sign-in dialog, which comes back to this page.
   signedIn?: boolean;
 }) => {
-  const signInHref = useAuthHref();
   const [open, setOpen] = useState(false);
   const {
     control,
@@ -99,10 +97,14 @@ const CreateAlertButton = ({
 
   if (!signedIn) {
     return (
-      <Link href={signInHref} className={cn("add-alert", className)}>
+      <button
+        type="button"
+        onClick={() => openAuth("sign-in")}
+        className={cn("add-alert", className)}
+      >
         <Bell className="size-4" />
         Add Alert
-      </Link>
+      </button>
     );
   }
 

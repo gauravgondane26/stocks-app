@@ -27,6 +27,7 @@ import { getSessionTimes } from "@/lib/trade/session";
 import type { TradeSettings } from "@/lib/trade/settings";
 import { sizeTrade } from "@/lib/trade/size";
 import { cn } from "@/lib/utils";
+import { openAuth } from "@/lib/auth-events";
 
 const STATUS_LABELS: Record<string, string> = {
   "pre-open": "NOT OPEN YET",
@@ -104,6 +105,8 @@ export type TradePlanPanelProps = {
   barsAvailable: boolean;
   settings: TradeSettings;
   settingsSaved: boolean;
+  // Guests can't save settings, so the settings links open the sign-in dialog.
+  signedIn: boolean;
   // A price under 15 minutes old, or null.
   latestPrice: number | null;
   clock: { date: string; time: string; isTradingDay: boolean };
@@ -117,9 +120,22 @@ const TradePlanPanel = ({
   barsAvailable,
   settings,
   settingsSaved,
+  signedIn,
   latestPrice,
   clock,
 }: TradePlanPanelProps) => {
+  const settingsLink = (text: string) =>
+    signedIn ? (
+      <Link href="/settings" className="text-yellow-500 hover:underline">{text}</Link>
+    ) : (
+      <button
+        type="button"
+        onClick={() => openAuth("sign-in", "/settings")}
+        className="cursor-pointer text-yellow-500 hover:underline"
+      >
+        {text}
+      </button>
+    );
   const money = (value: number) => formatMoney(value, market);
   const hasRange = entry.openingRange !== null && entry.openingRange.complete;
   const plannedEntry = entry.trigger?.price ?? (hasRange ? entry.level : null);
@@ -317,7 +333,7 @@ const TradePlanPanel = ({
             result.plan && (
               <p className="text-sm text-gray-500">
                 Set your account size and max loss per trade in{" "}
-                <Link href="/settings" className="text-yellow-500 hover:underline">Settings</Link>{" "}
+                {settingsLink("Settings")}{" "}
                 to size this trade.
               </p>
             )
@@ -379,7 +395,7 @@ const TradePlanPanel = ({
       {!settingsSaved && (
         <p className="mt-5 text-sm text-gray-500">
           Using default limits.{" "}
-          <Link href="/settings" className="text-yellow-500 hover:underline">Review your trade settings</Link>.
+          {settingsLink(signedIn ? "Review your trade settings" : "Sign in to use your own")}.
         </p>
       )}
       <p className="mt-5 border-t border-gray-700 pt-4 text-xs leading-relaxed text-gray-500">

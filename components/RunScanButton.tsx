@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
-import useAuthHref from "@/hooks/useAuthHref";
 import { runScanNow } from "@/lib/actions/scanner.actions";
+import { openAuth } from "@/lib/auth-events";
 
-// A guest gets a link to sign in, since a scan is saved for the person who runs it.
+// A guest gets the sign-in dialog, since a scan is saved for the person who runs it.
 const RunScanButton = ({
   mode,
   label,
@@ -17,7 +16,6 @@ const RunScanButton = ({
   label: string;
   signedIn?: boolean;
 }) => {
-  const signInHref = useAuthHref();
   const [isPending, startTransition] = useTransition();
 
   const run = () =>
@@ -34,9 +32,9 @@ const RunScanButton = ({
 
   if (!signedIn) {
     return (
-      <Link href={signInHref} className="add-alert">
+      <button type="button" onClick={() => openAuth("sign-in")} className="add-alert">
         {label}
-      </Link>
+      </button>
     );
   }
 

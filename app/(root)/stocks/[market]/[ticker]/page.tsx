@@ -104,6 +104,7 @@ const StockPage = async ({ params }: StockPageProps) => {
         market={symbol.market}
         ticker={symbol.ticker}
         exchange={symbol.exchange}
+        signedIn={user !== null}
         {...tradePlan}
       />
 
