@@ -162,7 +162,7 @@ export const saveScan = async (
 export const findLatestScan = async (
   market: MarketId,
   mode: ScanMode,
-  userId: string,
+  userId: string | null,
 ): Promise<(ScanDocument & { createdAt: Date }) | null> => {
   const Scan = await getScanModel();
   return Scan.findOne({ market, mode, userId: { $in: [null, userId] } })

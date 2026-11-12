@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { use, useEffect } from "react";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -10,6 +10,8 @@ import InputField from "@/components/forms/InputField";
 import SelectField from "@/components/forms/SelectField";
 import { Button } from "@/components/ui/button";
 import { signUpWithEmail } from "@/lib/actions/auth.actions";
+import { authPath, safeNextPath } from "@/lib/auth-path";
+import { isNextNavigation } from "@/lib/navigation-error";
 import {
   INVESTMENT_GOALS,
   PREFERRED_INDUSTRIES,
@@ -23,7 +25,9 @@ import {
   PASSWORD_MIN_LENGTH,
 } from "@/lib/validation/auth";
 
-const SignUp = () => {
+// `next` is the page a guest was on when they tried something that needs an account.
+const SignUp = ({ searchParams }: { searchParams: Promise<AuthSearchParams> }) => {
+  const next = safeNextPath(use(searchParams).next);
   const {
     register,
     handleSubmit,
@@ -57,9 +61,10 @@ const SignUp = () => {
   const onSubmit: SubmitHandler<SignUpFormData> = async (data) => {
     try {
       // On success the action redirects, so a returned value is always an error.
-      const result = await signUpWithEmail(data);
+      const result = await signUpWithEmail(data, next);
       if (result) toast.error(result.error);
-    } catch {
+    } catch (error) {
+      if (isNextNavigation(error)) return;
       toast.error("Something went wrong. Please try again.");
     }
   };
@@ -160,8 +165,9 @@ const SignUp = () => {
         <FooterLink
           text="Already have an account?"
           linkText="Sign in"
-          href="/sign-in"
+          href={authPath("/sign-in", next)}
         />
+        <FooterLink text="Just looking?" linkText="Keep browsing" href={next} />
       </form>
     </>
   );

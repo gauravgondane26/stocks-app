@@ -19,13 +19,15 @@ import {
 import { validateEmailSettings } from "@/lib/validation/emailSettings";
 import { validateTradeSettings } from "@/lib/validation/tradeSettings";
 
-// Falls back to the defaults, marked unsaved, so a database problem doesn't break the page.
+// Falls back to the defaults, marked unsaved, so a database problem doesn't break the
+// page. Guests always get the defaults.
 export const getTradeSettings = async (
   market: unknown,
 ): Promise<{ settings: TradeSettings; saved: boolean }> => {
-  const user = await requireUser();
+  const user = await getCurrentUser();
   const marketId: MarketId = isMarketId(market) ? market : "US";
   const defaults = defaultTradeSettings(marketId);
+  if (!user) return { settings: defaults, saved: false };
 
   try {
     const Settings = await getTradeSettingsModel();

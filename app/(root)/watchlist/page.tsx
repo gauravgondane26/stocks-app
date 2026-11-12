@@ -142,7 +142,7 @@ const WatchlistTable = async ({
 };
 
 const WatchlistPage = async () => {
-  await requireUser();
+  await requireUser("/watchlist");
 
   const market = await getCurrentMarket();
   const [watchlist, alerts] = await Promise.all([
