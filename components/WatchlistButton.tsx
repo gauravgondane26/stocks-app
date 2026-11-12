@@ -1,15 +1,14 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
-import useAuthHref from "@/hooks/useAuthHref";
 import {
   addToWatchlist,
   removeFromWatchlist,
 } from "@/lib/actions/watchlist.actions";
+import { openAuth } from "@/lib/auth-events";
 import type { StockSymbol } from "@/lib/market/types";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +19,7 @@ type WatchlistButtonProps = {
   company: string;
   isInWatchlist: boolean;
   variant?: "button" | "icon";
-  // A guest gets a link to sign in, which comes back to this page.
+  // A guest gets the sign-in dialog, which comes back to this page.
   signedIn?: boolean;
 };
 
@@ -31,7 +30,6 @@ const WatchlistButton = ({
   variant = "button",
   signedIn = true,
 }: WatchlistButtonProps) => {
-  const signInHref = useAuthHref();
   // Falls back to the server's value when the transition ends, so a failure undoes itself.
   const [isWatched, setIsWatched] = useOptimistic(isInWatchlist);
   const [isPending, startTransition] = useTransition();
@@ -63,12 +61,13 @@ const WatchlistButton = ({
 
   if (!signedIn) {
     return (
-      <Link
-        href={signInHref}
-        className="watchlist-btn flex items-center justify-center px-6"
+      <button
+        type="button"
+        onClick={() => openAuth("sign-in")}
+        className="watchlist-btn px-6"
       >
         Add to Watchlist
-      </Link>
+      </button>
     );
   }
 

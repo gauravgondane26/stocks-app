@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getCurrentMarket } from "@/lib/market/current";
+import AuthDialog from "./AuthDialog";
 import GuestMenu from "./GuestMenu";
 import MarketSwitcher from "./MarketSwitcher";
 import NavItems from "./NavItems";
@@ -23,7 +24,7 @@ const Header = async ({ user }: { user: User | null }) => {
           />
         </Link>
         <nav className="hidden lg:block">
-          <NavItems />
+          <NavItems signedIn={user !== null} />
         </nav>
         <div className="flex items-center gap-4">
           {/* Below md there isn't room, so it moves into the user or guest menu. */}
@@ -36,6 +37,7 @@ const Header = async ({ user }: { user: User | null }) => {
         </div>
       </div>
       <SearchCommand />
+      {!user && <AuthDialog />}
     </header>
   );
 };

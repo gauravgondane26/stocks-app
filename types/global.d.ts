@@ -71,7 +71,15 @@ declare global {
   type FooterLinkProps = {
     text: string;
     linkText: string;
-    href: string;
+    href?: string;
+    onClick?: () => void;
+  };
+
+  // Shared by the sign-in and sign-up forms. In the dialog, `onSwitch` swaps to the
+  // other form; on the full pages that's a link instead.
+  type AuthFormProps = {
+    next: string;
+    onSwitch?: () => void;
   };
 
   type WelcomeEmailData = {
