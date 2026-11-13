@@ -27,7 +27,7 @@ A watchlist with delayed quotes and alerts:
 ## What it does
 
 - **Two markets.** A switcher moves the whole app between the US (NASDAQ, NYSE, AMEX, prices in USD) and India (NSE and BSE, prices in INR), with each market's hours, holidays and currency.
-- **Search, stock pages and watchlists.** Delayed quotes, TradingView charts, company news, and a watchlist per market.
+- **Search, stock pages and watchlists.** Delayed quotes, TradingView charts and company details, and a watchlist per market. Company news comes in the daily digest email.
 - **Price alerts.** Above, below, stop, target, percent move, time of day and opening bell. Each alert rings once, in the app and by email.
 - **Trade tools.** An opening-range entry check, exit plan, position size, a PASS or BLOCK risk check against your own limits, and the Time Machine, which replays the rest of the session 10,000 times from the stock's own past candles. Every panel ends in a plan on screen, never an order.
 - **Scanner.** Opening-range breakouts and daily setups (20-day high, bull flag, reclaimed 20-day average, oversold, oversold bounce) over the S&P 500 or NIFTY 50 plus watchlists, on a schedule or on demand.
