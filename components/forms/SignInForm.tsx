@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { signInWithEmail } from "@/lib/actions/auth.actions";
 import { authPath } from "@/lib/auth-path";
 import { isNextNavigation } from "@/lib/navigation-error";
-import { EMAIL_PATTERN } from "@/lib/validation/auth";
+import { EMAIL_FIELD_RULES } from "@/lib/validation/auth";
 
 // Used by the /sign-in page and the sign-in dialog.
 // In the dialog, `onForgot` swaps to the forgot-password form; on the page it's a link.
@@ -51,13 +51,7 @@ const SignInForm = ({
         autoComplete="email"
         register={register}
         error={errors.email}
-        validation={{
-          required: "Enter your email",
-          pattern: {
-            value: EMAIL_PATTERN,
-            message: "Enter a valid email address",
-          },
-        }}
+        validation={EMAIL_FIELD_RULES}
       />
       <InputField
         name="password"
