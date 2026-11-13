@@ -70,12 +70,6 @@ declare global {
     onSwitch?: () => void;
   };
 
-  type WelcomeEmailData = {
-    email: string;
-    name: string;
-    intro: string;
-  };
-
   type User = {
     id: string;
     name: string;
@@ -102,38 +96,6 @@ declare global {
     | { ok: true; data: WatchlistEntry[] }
     | { ok: false };
 
-  type FinnhubSearchResult = {
-    symbol: string;
-    description: string;
-    displaySymbol?: string;
-    type: string;
-  };
-
-  type FinnhubSearchResponse = {
-    count: number;
-    result: FinnhubSearchResult[];
-  };
-
-  type QuoteData = {
-    c?: number;
-    dp?: number;
-  };
-
-  type ProfileData = {
-    name?: string;
-    marketCapitalization?: number;
-  };
-
-  type FinancialsData = {
-    metric?: { [key: string]: number };
-  };
-
-  type SelectedStock = {
-    symbol: string;
-    company: string;
-    currentPrice?: number;
-  };
-
   type AlertEntry = AlertRule & {
     id: string;
     symbol: StockSymbol;
@@ -147,35 +109,6 @@ declare global {
   type AlertActionResult = { ok: true } | { ok: false; error: string };
 
   type AlertsReadResult = { ok: true; data: AlertEntry[] } | { ok: false };
-
-  type MarketNewsArticle = {
-    id: number;
-    headline: string;
-    summary: string;
-    source: string;
-    url: string;
-    datetime: number;
-    category: string;
-    related: string;
-    image?: string;
-  };
-
-  type WatchlistNewsProps = {
-    news?: MarketNewsArticle[];
-  };
-
-  type RawNewsArticle = {
-    id: number;
-    headline?: string;
-    summary?: string;
-    source?: string;
-    url?: string;
-    datetime?: number;
-    image?: string;
-    category?: string;
-    related?: string;
-  };
-
 }
 
 export {};
