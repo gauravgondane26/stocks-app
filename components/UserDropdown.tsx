@@ -41,17 +41,16 @@ const UserDropdown = ({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-3 text-gray-400 hover:text-yellow-500 cursor-pointer bg-transparent border-none outline-none">
+      {/* Only the initials show in the header; the name and email are in the menu. */}
+      <DropdownMenuTrigger
+        aria-label={`Account menu for ${user.name}`}
+        className="flex items-center rounded-full cursor-pointer bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-yellow-500"
+      >
         <Avatar className="h-8 w-8">
           <AvatarFallback className="bg-yellow-500 text-yellow-900 text-sm font-bold">
             {initials}
           </AvatarFallback>
         </Avatar>
-        <div className="hidden md:flex flex-col items-start">
-          <span className="text-base font-medium text-gray-400">
-            {user.name}
-          </span>
-        </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
