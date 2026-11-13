@@ -10,9 +10,10 @@ import { signUpWithEmail } from "@/lib/actions/auth.actions";
 import { authPath } from "@/lib/auth-path";
 import { isNextNavigation } from "@/lib/navigation-error";
 import {
-  EMAIL_PATTERN,
+  confirmPasswordRules,
+  EMAIL_FIELD_RULES,
   NAME_MAX_LENGTH,
-  PASSWORD_MAX_LENGTH,
+  newPasswordRules,
   PASSWORD_MIN_LENGTH,
 } from "@/lib/validation/auth";
 
@@ -71,13 +72,7 @@ const SignUpForm = ({ next, onSwitch }: AuthFormProps) => {
         autoComplete="email"
         register={register}
         error={errors.email}
-        validation={{
-          required: "Enter your email",
-          pattern: {
-            value: EMAIL_PATTERN,
-            message: "Enter a valid email address",
-          },
-        }}
+        validation={EMAIL_FIELD_RULES}
       />
       <InputField
         name="password"
@@ -87,17 +82,7 @@ const SignUpForm = ({ next, onSwitch }: AuthFormProps) => {
         autoComplete="new-password"
         register={register}
         error={errors.password}
-        validation={{
-          required: "Enter a password",
-          minLength: {
-            value: PASSWORD_MIN_LENGTH,
-            message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
-          },
-          maxLength: {
-            value: PASSWORD_MAX_LENGTH,
-            message: `Password must be at most ${PASSWORD_MAX_LENGTH} characters`,
-          },
-        }}
+        validation={newPasswordRules("Enter a password")}
       />
       <InputField
         name="confirmPassword"
@@ -107,10 +92,7 @@ const SignUpForm = ({ next, onSwitch }: AuthFormProps) => {
         autoComplete="new-password"
         register={register}
         error={errors.confirmPassword}
-        validation={{
-          required: "Type the password again",
-          validate: (value) => value === getValues("password") || "Passwords don't match",
-        }}
+        validation={confirmPasswordRules(() => getValues("password"))}
       />
       <Button
         type="submit"

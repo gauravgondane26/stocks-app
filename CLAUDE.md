@@ -138,7 +138,7 @@ The hook's effect depends on `config` by reference, and it clears and reloads th
 
 ### Shared types
 
-`types/global.d.ts` declares ambient types in `declare global` (form data, field props, `SearchStock`, `WatchlistEntry`), so they are used without imports. `skipLibCheck` is on, so `tsc` doesn't report errors inside this file: `Control`, `FieldError` and the other `react-hook-form` types it references aren't imported, and won't be checked until they are.
+`types/global.d.ts` declares ambient types in `declare global` (form data, field props, `SearchStock`, `WatchlistEntry`), so they are used without imports. It imports the `react-hook-form` types it references, but `skipLibCheck` is on, so `tsc` never checks this file: a wrong or unused type here goes unnoticed, so delete types when their last user goes.
 
 ### Styling conventions
 
@@ -146,7 +146,7 @@ All reusable utility classes (`.header`, `.yellow-btn`, `.form-input`, etc.) are
 
 Dark mode is **always on** — the `.dark` class is hardcoded on `<html>`. The app's background is `bg-gray-900` (#050505).
 
-TradingView widget CSS is already present in `globals.css`. Widget configs in `lib/constants.ts` set a `#141414` background, the one place raw hex is expected, since those values go to TradingView rather than Tailwind.
+`globals.css` styles only the TradingView container (`.tradingview-widget-container`, its `__widget` child, the iframe and `.custom-chart`). Every widget renders in a cross-origin iframe, so page CSS can't style anything inside it; set colours through the widget configs instead. Widget configs in `lib/constants.ts` set a `#141414` background, the one place raw hex is expected, since those values go to TradingView rather than Tailwind.
 
 ### Assets
 

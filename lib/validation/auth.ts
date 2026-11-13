@@ -3,6 +3,31 @@ export const PASSWORD_MAX_LENGTH = 128;
 export const NAME_MAX_LENGTH = 100;
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// react-hook-form rules shared by the auth forms. The server actions check the same
+// limits again below, because a form can be skipped.
+export const EMAIL_FIELD_RULES = {
+  required: "Enter your email",
+  pattern: { value: EMAIL_PATTERN, message: "Enter a valid email address" },
+};
+
+export const newPasswordRules = (requiredMessage: string) => ({
+  required: requiredMessage,
+  minLength: {
+    value: PASSWORD_MIN_LENGTH,
+    message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
+  },
+  maxLength: {
+    value: PASSWORD_MAX_LENGTH,
+    message: `Password must be at most ${PASSWORD_MAX_LENGTH} characters`,
+  },
+});
+
+// `password` reads the other field at submit time.
+export const confirmPasswordRules = (password: () => string) => ({
+  required: "Type the password again",
+  validate: (value: string) => value === password() || "Passwords don't match",
+});
+
 type ValidationResult<T> =
   | { valid: true; data: T }
   | { valid: false; error: string };

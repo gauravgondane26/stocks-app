@@ -9,7 +9,7 @@ import InputField from "@/components/forms/InputField";
 import { Button } from "@/components/ui/button";
 import { requestPasswordReset } from "@/lib/actions/auth.actions";
 import { authPath } from "@/lib/auth-path";
-import { EMAIL_PATTERN } from "@/lib/validation/auth";
+import { EMAIL_FIELD_RULES } from "@/lib/validation/auth";
 
 // Used by the /forgot-password page and the sign-in dialog. The answer is the same
 // whether or not the email has an account.
@@ -64,10 +64,7 @@ const ForgotPasswordForm = ({ next, onSwitch }: AuthFormProps) => {
         autoComplete="email"
         register={register}
         error={errors.email}
-        validation={{
-          required: "Enter your email",
-          pattern: { value: EMAIL_PATTERN, message: "Enter a valid email address" },
-        }}
+        validation={EMAIL_FIELD_RULES}
       />
       <Button type="submit" disabled={isSubmitting} className="yellow-btn mt-5 w-full">
         {isSubmitting ? "Sending..." : "Send reset link"}

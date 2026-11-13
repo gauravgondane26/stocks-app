@@ -8,7 +8,11 @@ import { toast } from "sonner";
 import InputField from "@/components/forms/InputField";
 import { Button } from "@/components/ui/button";
 import { resetPassword } from "@/lib/actions/auth.actions";
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/validation/auth";
+import {
+  confirmPasswordRules,
+  newPasswordRules,
+  PASSWORD_MIN_LENGTH,
+} from "@/lib/validation/auth";
 
 type ResetFormData = { password: string; confirmPassword: string };
 
@@ -59,17 +63,7 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
         autoComplete="new-password"
         register={register}
         error={errors.password}
-        validation={{
-          required: "Enter a new password",
-          minLength: {
-            value: PASSWORD_MIN_LENGTH,
-            message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
-          },
-          maxLength: {
-            value: PASSWORD_MAX_LENGTH,
-            message: `Password must be at most ${PASSWORD_MAX_LENGTH} characters`,
-          },
-        }}
+        validation={newPasswordRules("Enter a new password")}
       />
       <InputField
         name="confirmPassword"
@@ -79,10 +73,7 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
         autoComplete="new-password"
         register={register}
         error={errors.confirmPassword}
-        validation={{
-          required: "Type the password again",
-          validate: (value) => value === getValues("password") || "Passwords don't match",
-        }}
+        validation={confirmPasswordRules(() => getValues("password"))}
       />
       <Button type="submit" disabled={isSubmitting} className="yellow-btn mt-5 w-full">
         {isSubmitting ? "Saving..." : "Set new password"}

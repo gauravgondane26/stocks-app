@@ -1,8 +1,8 @@
 import "server-only";
 
-import mongoose, { Schema, type Model, type Types } from "mongoose";
+import { Schema, type Types } from "mongoose";
 
-import { connectToDatabase } from "@/database/mongoose";
+import { getModel } from "@/database/mongoose";
 import {
   ALERT_TYPES,
   type AlertStatus,
@@ -58,12 +58,4 @@ const alertSchema = new Schema<AlertDocument>(
 alertSchema.index({ status: 1, market: 1 });
 alertSchema.index({ userId: 1, market: 1, status: 1 });
 
-export const getAlertModel = async (): Promise<Model<AlertDocument>> => {
-  await connectToDatabase();
-
-  const model =
-    (mongoose.models.Alert as Model<AlertDocument> | undefined) ??
-    mongoose.model<AlertDocument>("Alert", alertSchema);
-  await model.init();
-  return model;
-};
+export const getAlertModel = () => getModel<AlertDocument>("Alert", alertSchema);
