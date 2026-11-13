@@ -1,8 +1,8 @@
 import "server-only";
 
-import mongoose, { Schema, type Model } from "mongoose";
+import { Schema } from "mongoose";
 
-import { connectToDatabase } from "@/database/mongoose";
+import { getModel } from "@/database/mongoose";
 
 export type NotificationDocument = {
   userId: string;
@@ -23,16 +23,4 @@ const notificationSchema = new Schema<NotificationDocument>(
 
 notificationSchema.index({ userId: 1, createdAt: -1 });
 
-export const getNotificationModel = async (): Promise<
-  Model<NotificationDocument>
-> => {
-  await connectToDatabase();
-
-  const model =
-    (mongoose.models.Notification as
-      | Model<NotificationDocument>
-      | undefined) ??
-    mongoose.model<NotificationDocument>("Notification", notificationSchema);
-  await model.init();
-  return model;
-};
+export const getNotificationModel = () => getModel<NotificationDocument>("Notification", notificationSchema);

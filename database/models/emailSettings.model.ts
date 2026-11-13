@@ -1,8 +1,8 @@
 import "server-only";
 
-import mongoose, { Schema, type Model } from "mongoose";
+import { Schema } from "mongoose";
 
-import { connectToDatabase } from "@/database/mongoose";
+import { getModel } from "@/database/mongoose";
 
 // Which optional emails a user gets. No document means both are on, so accounts
 // made before this setting existed keep getting emails. The welcome email isn't
@@ -26,12 +26,4 @@ const emailSettingsSchema = new Schema<EmailSettingsDocument>(
 
 emailSettingsSchema.index({ userId: 1 }, { unique: true });
 
-export const getEmailSettingsModel = async (): Promise<Model<EmailSettingsDocument>> => {
-  await connectToDatabase();
-
-  const model =
-    (mongoose.models.EmailSettings as Model<EmailSettingsDocument> | undefined) ??
-    mongoose.model<EmailSettingsDocument>("EmailSettings", emailSettingsSchema);
-  await model.init();
-  return model;
-};
+export const getEmailSettingsModel = () => getModel<EmailSettingsDocument>("EmailSettings", emailSettingsSchema);

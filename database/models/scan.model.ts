@@ -1,8 +1,8 @@
 import "server-only";
 
-import mongoose, { Schema, type Model } from "mongoose";
+import { Schema } from "mongoose";
 
-import { connectToDatabase } from "@/database/mongoose";
+import { getModel } from "@/database/mongoose";
 import { MARKET_IDS } from "@/lib/market/markets";
 import type { MarketId } from "@/lib/market/types";
 import type { DailyHit, OrbHit } from "@/lib/trade/scanner";
@@ -43,12 +43,4 @@ scanSchema.index({ market: 1, mode: 1, userId: 1, createdAt: -1 });
 // Old scans are only history, so they expire after two weeks.
 scanSchema.index({ createdAt: 1 }, { expireAfterSeconds: 14 * 24 * 60 * 60 });
 
-export const getScanModel = async (): Promise<Model<ScanDocument>> => {
-  await connectToDatabase();
-
-  const model =
-    (mongoose.models.Scan as Model<ScanDocument> | undefined) ??
-    mongoose.model<ScanDocument>("Scan", scanSchema);
-  await model.init();
-  return model;
-};
+export const getScanModel = () => getModel<ScanDocument>("Scan", scanSchema);

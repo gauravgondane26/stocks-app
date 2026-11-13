@@ -1,8 +1,8 @@
 import "server-only";
 
-import mongoose, { Schema, type Model } from "mongoose";
+import { Schema } from "mongoose";
 
-import { connectToDatabase } from "@/database/mongoose";
+import { getModel } from "@/database/mongoose";
 import { MARKET_IDS } from "@/lib/market/markets";
 import type { MarketId } from "@/lib/market/types";
 import type { TradeSettings } from "@/lib/trade/settings";
@@ -33,14 +33,4 @@ const tradeSettingsSchema = new Schema<TradeSettingsDocument>(
 // One set per market, since amounts are in each market's currency.
 tradeSettingsSchema.index({ userId: 1, market: 1 }, { unique: true });
 
-export const getTradeSettingsModel = async (): Promise<
-  Model<TradeSettingsDocument>
-> => {
-  await connectToDatabase();
-
-  const model =
-    (mongoose.models.TradeSettings as Model<TradeSettingsDocument> | undefined) ??
-    mongoose.model<TradeSettingsDocument>("TradeSettings", tradeSettingsSchema);
-  await model.init();
-  return model;
-};
+export const getTradeSettingsModel = () => getModel<TradeSettingsDocument>("TradeSettings", tradeSettingsSchema);

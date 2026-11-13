@@ -1,6 +1,6 @@
 import "server-only";
 
-import mongoose from "mongoose";
+import mongoose, { type Model, type Schema } from "mongoose";
 
 type MongooseCache = {
   connection: typeof mongoose | null;
@@ -36,4 +36,15 @@ export const connectToDatabase = async (): Promise<typeof mongoose> => {
   }
 
   return cache.connection;
+};
+
+// Every model getter goes through here. With bufferCommands off, a model is compiled
+// only after connecting, and init() builds its unique indexes before the first write.
+// mongoose.models keeps one copy across hot reloads.
+export const getModel = async <T>(name: string, schema: Schema<T>): Promise<Model<T>> => {
+  await connectToDatabase();
+
+  const model = (mongoose.models[name] as Model<T> | undefined) ?? mongoose.model<T>(name, schema);
+  await model.init();
+  return model;
 };
