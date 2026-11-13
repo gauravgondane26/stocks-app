@@ -4,6 +4,26 @@ A read-only stock dashboard for the US and Indian (NSE and BSE) markets: search,
 
 OpenWatch never places orders. Prices come from free, unofficial sources and are delayed. Nothing in it is financial advice, the Time Machine is a simulation rather than a prediction, and most day traders lose money.
 
+Live at https://openwatch-phi.vercel.app. Guests can browse the dashboard, stock pages, search and scan results; the watchlist, alerts and settings need an account.
+
+## Screenshots
+
+The dashboard (US market), with TradingView's market overview and heatmap:
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+A stock page's trade plan: the opening-range check, then the exit plan for a planned entry. Position size and the risk check fill in once account limits are set in Settings:
+
+![Trade plan for Apple](docs/screenshots/trade-plan.png)
+
+The scanner's opening-range breakouts for the NIFTY 50:
+
+![India scanner](docs/screenshots/scanner.png)
+
+A watchlist with delayed quotes and alerts:
+
+![US watchlist](docs/screenshots/watchlist.png)
+
 ## What it does
 
 - **Two markets.** A switcher moves the whole app between the US (NASDAQ, NYSE, AMEX, prices in USD) and India (NSE and BSE, prices in INR), with each market's hours, holidays and currency.
