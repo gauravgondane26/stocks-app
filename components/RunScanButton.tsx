@@ -4,8 +4,18 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { runScanNow } from "@/lib/actions/scanner.actions";
+import { openAuth } from "@/lib/auth-events";
 
-const RunScanButton = ({ mode, label }: { mode: "daily" | "orb"; label: string }) => {
+// A guest gets the sign-in dialog, since a scan is saved for the person who runs it.
+const RunScanButton = ({
+  mode,
+  label,
+  signedIn = true,
+}: {
+  mode: "daily" | "orb";
+  label: string;
+  signedIn?: boolean;
+}) => {
   const [isPending, startTransition] = useTransition();
 
   const run = () =>
@@ -19,6 +29,14 @@ const RunScanButton = ({ mode, label }: { mode: "daily" | "orb"; label: string }
       if (result.ok) toast.success("Scan finished");
       else toast.error(result.error);
     });
+
+  if (!signedIn) {
+    return (
+      <button type="button" onClick={() => openAuth("sign-in")} className="add-alert">
+        {label}
+      </button>
+    );
+  }
 
   return (
     <button

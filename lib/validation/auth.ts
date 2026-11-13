@@ -1,11 +1,3 @@
-import {
-  INVESTMENT_GOALS,
-  PREFERRED_INDUSTRIES,
-  RISK_TOLERANCE_OPTIONS,
-} from "@/lib/constants";
-import { COUNTRY_OPTIONS } from "@/lib/countries";
-import { marketForCountry } from "@/lib/market/markets";
-
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
 export const NAME_MAX_LENGTH = 100;
@@ -18,8 +10,6 @@ type ValidationResult<T> =
 const asString = (value: unknown): string =>
   typeof value === "string" ? value : "";
 
-const isOption = (options: readonly Option[], value: string): boolean =>
-  options.some((option) => option.value === value);
 
 const validateCredentials = (email: string, password: string): string | null => {
   if (!EMAIL_PATTERN.test(email)) return "Enter a valid email address.";
@@ -42,10 +32,6 @@ export const validateSignUp = (
     fullName: asString(raw.fullName).trim(),
     email: asString(raw.email).trim().toLowerCase(),
     password: asString(raw.password),
-    country: asString(raw.country),
-    investmentGoals: asString(raw.investmentGoals),
-    riskTolerance: asString(raw.riskTolerance),
-    preferredIndustry: asString(raw.preferredIndustry),
   };
 
   if (!data.fullName) return { valid: false, error: "Enter your full name." };
@@ -55,19 +41,6 @@ export const validateSignUp = (
 
   const credentialsError = validateCredentials(data.email, data.password);
   if (credentialsError) return { valid: false, error: credentialsError };
-
-  if (!isOption(COUNTRY_OPTIONS, data.country)) {
-    return { valid: false, error: "Select a valid country." };
-  }
-  if (!isOption(INVESTMENT_GOALS, data.investmentGoals)) {
-    return { valid: false, error: "Select a valid investment goal." };
-  }
-  if (!isOption(RISK_TOLERANCE_OPTIONS, data.riskTolerance)) {
-    return { valid: false, error: "Select a valid risk tolerance." };
-  }
-  if (!isOption(PREFERRED_INDUSTRIES[marketForCountry(data.country)], data.preferredIndustry)) {
-    return { valid: false, error: "Select a valid industry." };
-  }
 
   return { valid: true, data };
 };
@@ -89,4 +62,33 @@ export const validateSignIn = (
   }
 
   return { valid: true, data };
+};
+
+export const validatePasswordResetRequest = (
+  input: unknown,
+): ValidationResult<{ email: string }> => {
+  const raw = (input ?? {}) as Record<string, unknown>;
+  const email = asString(raw.email).trim().toLowerCase();
+  if (!EMAIL_PATTERN.test(email)) return { valid: false, error: "Enter a valid email address." };
+  return { valid: true, data: { email } };
+};
+
+const TOKEN_MAX_LENGTH = 200;
+
+export const validatePasswordReset = (
+  input: unknown,
+): ValidationResult<{ token: string; password: string }> => {
+  const raw = (input ?? {}) as Record<string, unknown>;
+  const token = asString(raw.token);
+  const password = asString(raw.password);
+  if (!token || token.length > TOKEN_MAX_LENGTH) {
+    return { valid: false, error: "This reset link isn't valid. Ask for a new one." };
+  }
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return { valid: false, error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.` };
+  }
+  if (password.length > PASSWORD_MAX_LENGTH) {
+    return { valid: false, error: `Password must be at most ${PASSWORD_MAX_LENGTH} characters.` };
+  }
+  return { valid: true, data: { token, password } };
 };

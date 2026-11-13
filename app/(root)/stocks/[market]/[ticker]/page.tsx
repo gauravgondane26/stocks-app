@@ -5,7 +5,7 @@ import StockWidgets from "@/components/StockWidgets";
 import TradePlanPanel from "@/components/TradePlanPanel";
 import WatchlistButton from "@/components/WatchlistButton";
 import { isInWatchlist } from "@/lib/actions/watchlist.actions";
-import { requireUser } from "@/lib/better-auth/session";
+import { getCurrentUser } from "@/lib/better-auth/session";
 import { getMarketData } from "@/lib/market";
 import { getChartListing } from "@/lib/market/charts";
 import { formatMoney, formatPercent } from "@/lib/market/format";
@@ -16,9 +16,10 @@ type StockPageProps = {
   params: Promise<{ market: string; ticker: string }>;
 };
 
+// Guests can see the page and the trade plan. The watchlist and alert buttons send
+// them to sign in.
 const StockPage = async ({ params }: StockPageProps) => {
-  await requireUser();
-
+  const user = await getCurrentUser();
   const { market, ticker } = await params;
   const routeSymbol = symbolFromRoute(market, ticker);
   if (!routeSymbol) notFound();
@@ -86,10 +87,12 @@ const StockPage = async ({ params }: StockPageProps) => {
             symbol={symbol}
             company={company}
             isInWatchlist={watched}
+            signedIn={user !== null}
           />
           <CreateAlertButton
             symbol={symbol}
             company={company}
+            signedIn={user !== null}
             className="w-full! justify-center"
           />
         </div>
@@ -101,6 +104,7 @@ const StockPage = async ({ params }: StockPageProps) => {
         market={symbol.market}
         ticker={symbol.ticker}
         exchange={symbol.exchange}
+        signedIn={user !== null}
         {...tradePlan}
       />
 

@@ -8,6 +8,7 @@ import {
   addToWatchlist,
   removeFromWatchlist,
 } from "@/lib/actions/watchlist.actions";
+import { openAuth } from "@/lib/auth-events";
 import type { StockSymbol } from "@/lib/market/types";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,8 @@ type WatchlistButtonProps = {
   company: string;
   isInWatchlist: boolean;
   variant?: "button" | "icon";
+  // A guest gets the sign-in dialog, which comes back to this page.
+  signedIn?: boolean;
 };
 
 const WatchlistButton = ({
@@ -25,6 +28,7 @@ const WatchlistButton = ({
   company,
   isInWatchlist,
   variant = "button",
+  signedIn = true,
 }: WatchlistButtonProps) => {
   // Falls back to the server's value when the transition ends, so a failure undoes itself.
   const [isWatched, setIsWatched] = useOptimistic(isInWatchlist);
@@ -54,6 +58,18 @@ const WatchlistButton = ({
       }
     });
   };
+
+  if (!signedIn) {
+    return (
+      <button
+        type="button"
+        onClick={() => openAuth("sign-in")}
+        className="watchlist-btn px-6"
+      >
+        Add to Watchlist
+      </button>
+    );
+  }
 
   if (variant === "icon") {
     return (

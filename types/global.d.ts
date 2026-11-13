@@ -15,6 +15,9 @@ declare global {
     error: string;
   };
 
+  // The sign-in and sign-up pages' query string.
+  type AuthSearchParams = { next?: string | string[] };
+
   type SignInFormData = {
     email: string;
     password: string;
@@ -24,18 +27,6 @@ declare global {
     fullName: string;
     email: string;
     password: string;
-    country: string;
-    investmentGoals: string;
-    riskTolerance: string;
-    preferredIndustry: string;
-  };
-
-  type CountrySelectProps<T extends FieldValues> = {
-    name: Path<T>;
-    label: string;
-    control: Control<T>;
-    error?: FieldError;
-    required?: boolean;
   };
 
   type FormInputProps<T extends FieldValues> = {
@@ -68,7 +59,15 @@ declare global {
   type FooterLinkProps = {
     text: string;
     linkText: string;
-    href: string;
+    href?: string;
+    onClick?: () => void;
+  };
+
+  // Shared by the sign-in and sign-up forms. In the dialog, `onSwitch` swaps to the
+  // other form; on the full pages that's a link instead.
+  type AuthFormProps = {
+    next: string;
+    onSwitch?: () => void;
   };
 
   type WelcomeEmailData = {
@@ -81,7 +80,6 @@ declare global {
     id: string;
     name: string;
     email: string;
-    country: string;
   };
 
   type SearchStock = StockSearchResult & {

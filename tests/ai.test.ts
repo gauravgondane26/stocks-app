@@ -42,12 +42,7 @@ describe("text checks", () => {
   });
 
   it("writes a fallback intro for the user's market that passes the same checks", () => {
-    const intro = fallbackIntro({
-      country: "IN",
-      investmentGoals: "Active trading",
-      riskTolerance: "Medium",
-      preferredIndustry: "Banking & Financial Services",
-    });
+    const intro = fallbackIntro("IN");
     expect(intro).toContain("India market");
     expect(isUsableIntro(intro)).toBe(true);
   });

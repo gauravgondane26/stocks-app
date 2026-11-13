@@ -10,6 +10,8 @@ import {
   digestEmailHtml,
   digestEmailText,
   type DigestEmail,
+  resetPasswordEmailHtml,
+  resetPasswordEmailText,
   welcomeEmailHtml,
   welcomeEmailText,
 } from "@/lib/nodemailer/templates";
@@ -103,6 +105,32 @@ export const sendWelcomeEmail = async ({
     subject: "Welcome to OpenWatch",
     text: welcomeEmailText({ name, intro, marketLabel, appUrl }),
     html: welcomeEmailHtml({ name, intro, marketLabel, appUrl }),
+  });
+  return true;
+};
+
+// False when email isn't configured. A send failure throws.
+export const sendPasswordResetEmail = async ({
+  to,
+  name,
+  resetUrl,
+}: {
+  to: string;
+  name: string;
+  resetUrl: string;
+}): Promise<boolean> => {
+  const mailer = getTransporter();
+  if (!mailer) {
+    console.warn("NODEMAILER_EMAIL or NODEMAILER_PASSWORD is not set.");
+    return false;
+  }
+
+  await mailer.sendMail({
+    from: sender(),
+    to,
+    subject: "Reset your OpenWatch password",
+    text: resetPasswordEmailText({ name, resetUrl }),
+    html: resetPasswordEmailHtml({ name, resetUrl }),
   });
   return true;
 };

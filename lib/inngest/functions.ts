@@ -19,7 +19,8 @@ import { isMarketId, MARKET_IDS, MARKETS } from "@/lib/market/markets";
 import type { MarketId } from "@/lib/market/types";
 import { allWatchlistSymbols, buildUniverse, runScan, saveScan } from "@/lib/scanner";
 import { toMinutes } from "@/lib/trade/session";
-import { deliverWelcomeEmail, findWelcomeProfile, writeWelcomeIntro } from "@/lib/welcome";
+import { findUserFields } from "@/lib/users";
+import { deliverWelcomeEmail, writeWelcomeIntro } from "@/lib/welcome";
 
 // Sent once per new user by the sign-up action. The event carries only the user id.
 // Step results are saved by Inngest, so the profile step returns no name or email,
@@ -32,11 +33,12 @@ export const welcomeEmail = inngest.createFunction(
   },
   async ({ event, step }) => {
     const userId = typeof event.data?.userId === "string" ? event.data.userId : "";
-    const profile = await step.run("load-profile", () => findWelcomeProfile(userId));
-    if (!profile) return { skipped: "user not found" };
+    const market: MarketId = isMarketId(event.data?.market) ? event.data.market : "US";
+    const exists = await step.run("find-user", async () => (await findUserFields(userId, { _id: 1 })) !== null);
+    if (!exists) return { skipped: "user not found" };
 
-    const intro = await step.run("write-intro", () => writeWelcomeIntro(profile));
-    const sent = await step.run("send-email", () => deliverWelcomeEmail(userId, intro.text));
+    const intro = await step.run("write-intro", () => writeWelcomeIntro(market));
+    const sent = await step.run("send-email", () => deliverWelcomeEmail(userId, intro.text, market));
     return { introSource: intro.source, model: intro.model, sent };
   },
 );

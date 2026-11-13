@@ -16,6 +16,7 @@ import MarketSwitcher from "@/components/MarketSwitcher";
 import NavItems from "@/components/NavItems";
 import { signOut } from "@/lib/actions/auth.actions";
 import type { MarketId } from "@/lib/market/types";
+import { isNextNavigation } from "@/lib/navigation-error";
 import { getInitials } from "@/lib/utils";
 
 const UserDropdown = ({
@@ -32,7 +33,8 @@ const UserDropdown = ({
       // On success the action redirects, so a returned value is always an error.
       const result = await signOut();
       if (result) toast.error(result.error);
-    } catch {
+    } catch (error) {
+      if (isNextNavigation(error)) return;
       toast.error("Something went wrong. Please try again.");
     }
   };
@@ -80,9 +82,9 @@ const UserDropdown = ({
           <LogOut className="h-4 w-4 mr-2 hidden sm:block" />
           Logout
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="hidden sm:block bg-gray-600" />
-        <nav className="sm:hidden">
-          <NavItems />
+        <DropdownMenuSeparator className="bg-gray-600 lg:hidden" />
+        <nav className="lg:hidden">
+          <NavItems variant="menu" />
         </nav>
         <div className="px-2 py-2 md:hidden">
           <MarketSwitcher market={market} />

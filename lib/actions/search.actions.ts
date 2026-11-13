@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
+
 import { getCurrentUser } from "@/lib/better-auth/session";
-import { allowRequest } from "@/lib/rate-limit";
+import { allowCaller, clientIp } from "@/lib/rate-limit";
 import { getMarketData } from "@/lib/market";
 import { getCurrentMarket } from "@/lib/market/current";
 import { POPULAR_STOCKS } from "@/lib/market/popular";
@@ -9,9 +11,9 @@ import type { MarketId, StockSearchResult } from "@/lib/market/types";
 import { findWatchedTickers } from "@/lib/watchlist";
 
 const MAX_QUERY_LENGTH = 64;
-// Finnhub's free plan allows 60 calls a minute across the whole app.
-const SEARCHES_PER_MINUTE = 30;
-const ONE_MINUTE_MS = 60_000;
+// Finnhub's free plan allows 60 calls a minute across the whole app, so guests
+// together get half of it.
+const SEARCH_LIMITS = { perCaller: 30, allGuests: 30, windowMs: 60_000 };
 
 // Search still works without the stars if the database is unreachable.
 const getWatchedTickers = async (userId: string, market: MarketId) => {
@@ -23,11 +25,11 @@ const getWatchedTickers = async (userId: string, market: MarketId) => {
   }
 };
 
+// Guests can search too, limited per IP and all together. Their results have no stars.
 export const searchStocks = async (
   input: unknown,
 ): Promise<SearchStocksResult> => {
   const user = await getCurrentUser();
-  if (!user) return { ok: false, error: "Please sign in again." };
 
   if (typeof input !== "string" || input.length > MAX_QUERY_LENGTH) {
     return { ok: false, error: "That search is too long." };
@@ -38,7 +40,8 @@ export const searchStocks = async (
   let stocks: StockSearchResult[] = POPULAR_STOCKS[market];
 
   if (query) {
-    if (!allowRequest(`search:${user.id}`, SEARCHES_PER_MINUTE, ONE_MINUTE_MS)) {
+    const caller = user ? { userId: user.id } : { ip: clientIp(await headers()) };
+    if (!allowCaller("search", caller, SEARCH_LIMITS)) {
       return { ok: false, error: "Too many searches. Wait a moment and try again." };
     }
 
@@ -49,7 +52,7 @@ export const searchStocks = async (
     stocks = result.data;
   }
 
-  const watched = await getWatchedTickers(user.id, market);
+  const watched = user ? await getWatchedTickers(user.id, market) : new Set<string>();
   return {
     ok: true,
     stocks: stocks.map((stock) => ({

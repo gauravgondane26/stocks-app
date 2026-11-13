@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { authPath } from "@/lib/auth-path";
 import { getAuth } from "@/lib/better-auth/auth";
 
 // `cache` means a layout and page in the same request share one session lookup.
@@ -15,14 +16,14 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
   const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session) return null;
 
-  const { id, name, email, country } = session.user;
-  return { id, name, email, country };
+  const { id, name, email } = session.user;
+  return { id, name, email };
 });
 
-// Layouts don't re-render on client-side navigation, so every protected page
-// must call this itself as well as relying on the (root) layout.
-export const requireUser = async (): Promise<User> => {
+// Pages that need an account call this with their own path, so signing in comes
+// back to them. Guests can browse everything else.
+export const requireUser = async (returnTo = "/"): Promise<User> => {
   const user = await getCurrentUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect(authPath("/sign-in", returnTo));
   return user;
 };

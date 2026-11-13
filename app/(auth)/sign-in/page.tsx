@@ -1,77 +1,23 @@
 "use client";
 
-import { useForm, type SubmitHandler } from "react-hook-form";
-import { toast } from "sonner";
+import { use } from "react";
 
-import FooterLink from "@/components/forms/FooterLink";
-import InputField from "@/components/forms/InputField";
-import { Button } from "@/components/ui/button";
-import { signInWithEmail } from "@/lib/actions/auth.actions";
-import { EMAIL_PATTERN } from "@/lib/validation/auth";
+import SignInForm from "@/components/forms/SignInForm";
+import { safeNextPath } from "@/lib/auth-path";
 
-const SignIn = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<SignInFormData>({
-    defaultValues: { email: "", password: "" },
-    mode: "onBlur",
-  });
-
-  const onSubmit: SubmitHandler<SignInFormData> = async (data) => {
-    try {
-      // On success the action redirects, so a returned value is always an error.
-      const result = await signInWithEmail(data);
-      if (result) toast.error(result.error);
-    } catch {
-      toast.error("Something went wrong. Please try again.");
-    }
-  };
+// The full page, for direct visits and pages that need an account. In the app,
+// guests get the same form in a dialog (components/AuthDialog.tsx).
+// `next` is the page to go to after signing in.
+const SignIn = ({ searchParams }: { searchParams: Promise<AuthSearchParams> }) => {
+  const next = safeNextPath(use(searchParams).next);
 
   return (
     <>
-      <h1 className="form-title">Welcome Back</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-        <InputField
-          name="email"
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          autoComplete="email"
-          register={register}
-          error={errors.email}
-          validation={{
-            required: "Enter your email",
-            pattern: {
-              value: EMAIL_PATTERN,
-              message: "Enter a valid email address",
-            },
-          }}
-        />
-        <InputField
-          name="password"
-          label="Password"
-          type="password"
-          placeholder="Your password"
-          autoComplete="current-password"
-          register={register}
-          error={errors.password}
-          validation={{ required: "Enter your password" }}
-        />
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="yellow-btn mt-5 w-full"
-        >
-          {isSubmitting ? "Signing in..." : "Sign In"}
-        </Button>
-        <FooterLink
-          text="Don't have an account?"
-          linkText="Create one"
-          href="/sign-up"
-        />
-      </form>
+      <h1 className="form-title mb-3!">Welcome Back</h1>
+      <p className="mb-10 text-gray-500">
+        Sign in to keep a watchlist, set alerts and save your trade settings.
+      </p>
+      <SignInForm next={next} />
     </>
   );
 };

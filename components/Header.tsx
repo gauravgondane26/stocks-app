@@ -1,12 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getCurrentMarket } from "@/lib/market/current";
+import AuthDialog from "./AuthDialog";
+import GuestMenu from "./GuestMenu";
 import MarketSwitcher from "./MarketSwitcher";
 import NavItems from "./NavItems";
 import SearchCommand from "./SearchCommand";
 import UserDropdown from "./UserDropdown";
 
-const Header = async ({ user }: { user: User }) => {
+const Header = async ({ user }: { user: User | null }) => {
   const market = await getCurrentMarket();
 
   return (
@@ -21,16 +23,21 @@ const Header = async ({ user }: { user: User }) => {
             className="h-8 w-auto cursor-pointer"
           />
         </Link>
-        <nav className="hidden sm:block">
-          <NavItems />
+        <nav className="hidden lg:block">
+          <NavItems signedIn={user !== null} />
         </nav>
         <div className="flex items-center gap-4">
-          {/* Below md there isn't room, so it moves into the user menu. */}
+          {/* Below md there isn't room, so it moves into the user or guest menu. */}
           <MarketSwitcher market={market} className="hidden md:inline-flex" />
-          <UserDropdown user={user} market={market} />
+          {user ? (
+            <UserDropdown user={user} market={market} />
+          ) : (
+            <GuestMenu market={market} />
+          )}
         </div>
       </div>
       <SearchCommand />
+      {!user && <AuthDialog />}
     </header>
   );
 };

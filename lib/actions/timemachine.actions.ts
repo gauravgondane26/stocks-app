@@ -1,10 +1,12 @@
 "use server";
 
+import { headers } from "next/headers";
+
 import { getCurrentUser } from "@/lib/better-auth/session";
 import { getMarketData } from "@/lib/market";
 import { getMarketClock } from "@/lib/market/hours";
 import { MARKETS } from "@/lib/market/markets";
-import { allowRequest } from "@/lib/rate-limit";
+import { allowCaller, clientIp } from "@/lib/rate-limit";
 import { toMinutes } from "@/lib/trade/session";
 import {
   runTimeMachine,
@@ -13,8 +15,7 @@ import {
 } from "@/lib/trade/timemachine";
 import { validateWatchlistAddition } from "@/lib/validation/watchlist";
 
-const RUNS_PER_MINUTE = 6;
-const ONE_MINUTE_MS = 60_000;
+const RUN_LIMITS = { perCaller: 6, allGuests: 30, windowMs: 60_000 };
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const OR_STOP_RULES = new Set(["or_mid", "or_low"]);
 
@@ -26,11 +27,11 @@ const positive = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
 
 // Replays today's plan for one stock. The date always comes from the server clock.
+// Guests can run it too, limited per IP.
 export const runTimeMachineAction = async (
   input: unknown,
 ): Promise<TimeMachineActionResult> => {
   const user = await getCurrentUser();
-  if (!user) return { ok: false, error: "Please sign in again." };
 
   // Reuses the stock checks; the company name isn't needed here.
   const raw = (input ?? {}) as Record<string, unknown>;
@@ -61,7 +62,8 @@ export const runTimeMachineAction = async (
     ? (raw.stopRule as HistoryStopRule)
     : "pct";
 
-  if (!allowRequest(`timemachine:${user.id}`, RUNS_PER_MINUTE, ONE_MINUTE_MS)) {
+  const caller = user ? { userId: user.id } : { ip: clientIp(await headers()) };
+  if (!allowCaller("timemachine", caller, RUN_LIMITS)) {
     return { ok: false, error: "Too many runs. Wait a minute and try again." };
   }
 

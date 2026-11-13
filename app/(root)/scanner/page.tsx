@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import RunScanButton from "@/components/RunScanButton";
 import type { ScanDocument } from "@/database/models/scan.model";
-import { requireUser } from "@/lib/better-auth/session";
+import { getCurrentUser } from "@/lib/better-auth/session";
 import { getCurrentMarket } from "@/lib/market/current";
 import { formatMoney } from "@/lib/market/format";
 import { MARKETS } from "@/lib/market/markets";
@@ -21,12 +21,13 @@ export const maxDuration = 300;
 
 type LoadedScan = (ScanDocument & { createdAt: Date }) | null;
 
-const loadScans = async (market: MarketId, userId: string) => {
+// A guest (no user id) sees the scheduled scans and has no watchlist.
+const loadScans = async (market: MarketId, userId: string | null) => {
   try {
     const [daily, orb, watched] = await Promise.all([
       findLatestScan(market, "daily", userId),
       findLatestScan(market, "orb", userId),
-      findWatchedTickers(userId, market),
+      userId ? findWatchedTickers(userId, market) : new Set<string>(),
     ]);
     return { ok: true as const, daily, orb, watched };
   } catch (error) {
@@ -70,12 +71,14 @@ const WatchStar = ({ watched }: { watched: boolean }) =>
     <Star aria-label="In your watchlist" className="inline size-3.5 fill-yellow-500 text-yellow-500" />
   ) : null;
 
+// Anyone can read the scheduled scans. Running one needs an account, because the
+// scan is saved for that person and includes their watchlist.
 const ScannerPage = async () => {
-  const user = await requireUser();
+  const user = await getCurrentUser();
   const market = await getCurrentMarket();
   const { open, close, label } = MARKETS[market];
   const { index, members } = getIndexInfo(market);
-  const loaded = await loadScans(market, user.id);
+  const loaded = await loadScans(market, user?.id ?? null);
 
   if (!loaded.ok) {
     return (
@@ -106,7 +109,7 @@ const ScannerPage = async () => {
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-gray-100">Opening-range breakouts</h2>
-          <RunScanButton mode="orb" label="Run breakout scan" />
+          <RunScanButton mode="orb" label="Run breakout scan" signedIn={user !== null} />
         </div>
         <p className="text-sm text-gray-500">
           The first 5-minute bar to close above the high of the first 15 minutes.
@@ -150,7 +153,7 @@ const ScannerPage = async () => {
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-gray-100">Daily setups</h2>
-          <RunScanButton mode="daily" label="Run daily scan" />
+          <RunScanButton mode="daily" label="Run daily scan" signedIn={user !== null} />
         </div>
         <p className="text-sm text-gray-500">
           Rules on daily closes: a 20-day closing-high breakout, a bull flag, a

@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { createAlert } from "@/lib/actions/alert.actions";
+import { openAuth } from "@/lib/auth-events";
 import { describeAlert } from "@/lib/alerts/describe";
 import { alertValueKind, type AlertRule } from "@/lib/alerts/types";
 import { ALERT_TYPE_OPTIONS } from "@/lib/constants";
@@ -44,10 +45,13 @@ const CreateAlertButton = ({
   symbol,
   company,
   className,
+  signedIn = true,
 }: {
   symbol: StockSymbol;
   company: string;
   className?: string;
+  // A guest gets the sign-in dialog, which comes back to this page.
+  signedIn?: boolean;
 }) => {
   const [open, setOpen] = useState(false);
   const {
@@ -90,6 +94,19 @@ const CreateAlertButton = ({
     );
     changeOpen(false);
   };
+
+  if (!signedIn) {
+    return (
+      <button
+        type="button"
+        onClick={() => openAuth("sign-in")}
+        className={cn("add-alert", className)}
+      >
+        <Bell className="size-4" />
+        Add Alert
+      </button>
+    );
+  }
 
   return (
     <>
