@@ -2,6 +2,11 @@
 #
 #   docker compose -f pipeline/docker-compose.yml up -d                # Kafka
 #   docker compose -f pipeline/docker-compose.yml --profile ui up -d   # plus Kafbat UI on :8081
+#   docker compose --env-file .env.local -f pipeline/docker-compose.yml --profile airflow up -d --build
+#                                                                      # plus Airflow on :8080
+#
+# Run these from the repo root. Airflow gets only MONGODB_URI, read from .env.local by
+# --env-file; nothing else from that file reaches the container.
 #
 # The Node services in pipeline/worker run on the host and reach Kafka on localhost:9092.
 # Containers on this network use kafka:29092. Topic data lives in the container, so it
@@ -50,6 +55,36 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: openwatch
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  airflow:
+    # `airflow standalone`: API server, scheduler, DAG processor and triggerer in one
+    # container, with SQLite and the LocalExecutor. About 1.5 to 2 GB instead of the 4 GB
+    # multi-container setup. It prints the generated admin password on first start
+    # (`docker logs openwatch-airflow | grep -i password`). State lives in the container,
+    # so it survives `stop` but not `down`.
+    build: ./airflow
+    image: openwatch-airflow:local
+    container_name: openwatch-airflow
+    profiles: [airflow]
+    command: standalone
+    ports:
+      - "8080:8080"
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      PYTHONPATH: /opt/airflow/include
+      OPENWATCH_REPO: /opt/openwatch
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags:ro
+      - ./airflow/include:/opt/airflow/include:ro
+      - ./airflow/tests:/opt/airflow/tests:ro
+      # Only the data the DAGs read (index members), not the whole repo.
+      - ../lib/market/data:/opt/openwatch/lib/market/data:ro
     depends_on:
       kafka:
         condition: service_healthy
