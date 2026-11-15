@@ -73,6 +73,10 @@ GitHub Actions runs lint, tests, build and typecheck on every pull request and e
 
 The tests cover the pure code: alert rules, the trade tools, the Time Machine, the scanner, market hours and holidays, symbol conversion, news filtering, AI text checks, the digest window, email templates, validation and rate limits. The trade tools are checked against the day-trader skill's worked TSLA example, using its fixtures in `tests/fixtures/skill`.
 
+## Data pipeline
+
+`pipeline/` holds a Kafka quote stream that runs locally beside the app: one producer polls the stocks people watch, and separate consumer groups evaluate alerts, notify (a dry run by default) and archive every quote to MongoDB, each at its own pace. A replay mode sends a past session through it at any hour. See [pipeline/README.md](pipeline/README.md) for the design, how to run it and a consumer-lag demo.
+
 ## Deploying
 
 The app runs on Vercel, the database on MongoDB Atlas and the background jobs on Inngest Cloud. All three have free plans that fit a few users.
