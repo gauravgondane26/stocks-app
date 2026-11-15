@@ -4,7 +4,10 @@ eod_bars_us runs at 16:30 New York time and eod_bars_in at 16:00 Kolkata time, M
 to Friday. Each run covers its own trading day:
 
     build_universe -> fetch_bars -> check_trading_day -> quality_checks -> load
-        -> publish_eod_ready
+        -> reconcile_stream -> publish_eod_ready
+
+reconcile_stream compares the Kafka archiver's last streamed price for each stock with
+the official close, and records the differences in the day's quality report.
 
 The schedules use CronTriggerTimetable in each market's time zone, which gives a
 scheduled run a logical date equal to its trigger time, so the 16:30 run on 2026-11-13
@@ -147,14 +150,41 @@ def make_eod_dag(market_id: str, cron: str):
             return len(rows)
 
         @task
-        def publish_eod_ready(path: str, quality: dict, loaded: int) -> dict:
+        def reconcile_stream(path: str, _loaded: int) -> dict:
+            """The Kafka archiver's last price per stock vs the official close just
+            loaded. Reports only: a difference never fails the run."""
+            from openwatch_pipeline import store
+            from openwatch_pipeline.reconcile import day_bounds_ms, reconcile
+
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
+            day = date.fromisoformat(data["date"])
+            closes = {symbol: bar["close"] for symbol, bar in data["bars"].items() if bar}
+            start, end = day_bounds_ms(day, market.time_zone)
+            section = reconcile(market_id, closes, store.intraday_last_prices(market_id, start, end))
+            store.save_stream_section(market_id, data["date"], section)
+            print(
+                f"{data['date']} stream vs close: {section['status']}, "
+                f"{section['matched']} of {section['streamed']} streamed stocks matched, "
+                f"{len(section['drifted'])} over {section['threshold']:.0%}"
+                + (f", max difference {section['max_abs_diff']:.2%}" if section.get("max_abs_diff") is not None else "")
+            )
+            return {"streamed": section["streamed"], "drifted": len(section["drifted"])}
+
+        @task
+        def publish_eod_ready(path: str, quality: dict, loaded: int, stream: dict) -> dict:
             from openwatch_pipeline.events import publish_eod_ready as publish
 
             day = json.loads(Path(path).read_text(encoding="utf-8"))["date"]
             event = publish(
                 market_id,
                 day,
-                {"symbols": quality["symbols"], "loaded": loaded, "missing": quality["missing"]},
+                {
+                    "symbols": quality["symbols"],
+                    "loaded": loaded,
+                    "missing": quality["missing"],
+                    "streamed": stream["streamed"],
+                    "drifted": stream["drifted"],
+                },
             )
             print(f"Published {event}")
             return event
@@ -165,7 +195,8 @@ def make_eod_dag(market_id: str, cron: str):
         quality = quality_checks(path)
         trading >> quality
         loaded = load(path, quality)
-        publish_eod_ready(path, quality, loaded)
+        stream = reconcile_stream(path, loaded)
+        publish_eod_ready(path, quality, loaded, stream)
 
     return eod_bars()
 

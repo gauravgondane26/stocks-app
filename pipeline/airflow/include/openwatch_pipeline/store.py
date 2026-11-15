@@ -84,6 +84,15 @@ def save_quality_report(market: str, day: str, report: dict) -> None:
     )
 
 
+def save_stream_section(market: str, day: str, section: dict) -> None:
+    """Adds the stream-vs-batch comparison to the day's quality report."""
+    pipeline_db()["quality_reports"].update_one(
+        {"market": market, "date": day},
+        {"$set": {"stream": section}},
+        upsert=True,
+    )
+
+
 def intraday_last_prices(market: str, day_start_ms: int, day_end_ms: int) -> list[dict]:
     """The last streamed quote per stock between two times, from the Kafka archiver."""
     cursor = pipeline_db()["intraday_quotes"].aggregate(

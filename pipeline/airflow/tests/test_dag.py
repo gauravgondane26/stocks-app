@@ -19,6 +19,7 @@ EXPECTED_ORDER = [
     "check_trading_day",
     "quality_checks",
     "load",
+    "reconcile_stream",
     "publish_eod_ready",
 ]
 
