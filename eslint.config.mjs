@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The data pipeline has its own package and typecheck (pipeline/worker).
+    "pipeline/**",
   ]),
 ]);
 
