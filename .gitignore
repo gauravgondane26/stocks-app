@@ -3,6 +3,9 @@
 # dependencies
 /node_modules
 /pipeline/worker/node_modules
+# Python (pipeline/airflow)
+__pycache__/
+.pytest_cache/
 /.pnp
 .pnp.*
 .yarn/*

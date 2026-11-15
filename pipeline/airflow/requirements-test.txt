@@ -1,0 +1,5 @@
+# For `pytest pipeline/airflow/tests` outside the container (CI, local). The pure modules
+# need nothing else; the DAG test is skipped unless Airflow is installed.
+pytest==8.4.2
+# Windows has no system time zone database for zoneinfo.
+tzdata==2026.6

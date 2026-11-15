@@ -1,0 +1,4 @@
+# Installed into the Airflow image (see Dockerfile). Pinned; each release was at least
+# two weeks old when chosen.
+pymongo==4.19.0
+confluent-kafka==2.16.1
