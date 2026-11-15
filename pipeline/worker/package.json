@@ -1,0 +1,24 @@
+{
+  "name": "openwatch-pipeline-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Kafka services for OpenWatch's quote stream. Reads the app's lib/ code; the app never imports from here.",
+  "scripts": {
+    "topics": "tsx --conditions=react-server --env-file=../../.env.local src/create-topics.ts",
+    "producer": "tsx --conditions=react-server --env-file=../../.env.local src/producer.ts",
+    "replay": "tsx --conditions=react-server --env-file=../../.env.local src/replay.ts",
+    "evaluator":"tsx --conditions=react-server --env-file=../../.env.local src/evaluator.ts",
+    "notifier": "tsx --conditions=react-server --env-file=../../.env.local src/notifier.ts",
+    "archiver": "tsx --conditions=react-server --env-file=../../.env.local src/archiver.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@platformatic/kafka": "2.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

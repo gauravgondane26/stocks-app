@@ -1,0 +1,55 @@
+# OpenWatch data pipeline, local only.
+#
+#   docker compose -f pipeline/docker-compose.yml up -d                # Kafka
+#   docker compose -f pipeline/docker-compose.yml --profile ui up -d   # plus Kafbat UI on :8081
+#
+# The Node services in pipeline/worker run on the host and reach Kafka on localhost:9092.
+# Containers on this network use kafka:29092. Topic data lives in the container, so it
+# survives `stop` but not `down`; the services recreate the topics on startup.
+name: openwatch-pipeline
+
+services:
+  kafka:
+    # 4.2.x because @platformatic/kafka 2.15 is tested against Kafka up to 4.2.
+    image: apache/kafka:4.2.2
+    container_name: openwatch-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      CLUSTER_ID: yzwOww5ZQSCtlCsoZ5kpKg
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENERS: HOST://0.0.0.0:9092,DOCKER://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: HOST://localhost:9092,DOCKER://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: HOST:PLAINTEXT,DOCKER:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
+      # One broker, so every internal topic has a single replica.
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # Topics come only from pipeline/worker/src/topics.ts, so a typo can't create one.
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 15s
+
+  kafka-ui:
+    image: kafbat/kafka-ui:v1.5.0
+    container_name: openwatch-kafka-ui
+    profiles: [ui]
+    ports:
+      # 8080 is left for Airflow (Phase 8b).
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: openwatch
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy

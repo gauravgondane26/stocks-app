@@ -23,6 +23,9 @@ jobs:
           # The Node version the Vercel project runs.
           node-version: 26
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            pipeline/worker/package-lock.json
       - run: npm ci
       - run: npm run lint
       - run: npm test
@@ -31,3 +34,10 @@ jobs:
       - run: npm run build
       # After the build, so the route types Next generates in .next/types exist.
       - run: npm run typecheck
+      # The data pipeline's worker has its own package. Its pure modules are already
+      # covered by `npm test`; this typechecks the services, which import app code
+      # that needs next-env.d.ts from the build above.
+      - run: npm ci
+        working-directory: pipeline/worker
+      - run: npm run typecheck
+        working-directory: pipeline/worker
