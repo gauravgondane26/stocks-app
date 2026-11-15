@@ -3,12 +3,16 @@
 import {
   Admin,
   Consumer,
+  type Message,
+  MessagesStreamFallbackModes,
+  MessagesStreamModes,
   Producer,
   ProduceAcks,
   stringDeserializers,
   stringSerializers,
 } from "@platformatic/kafka";
 
+import { processThenCommit } from "./handlers";
 import { TOPIC_SPECS } from "./topics";
 
 const brokers = () =>
@@ -56,6 +60,52 @@ export const ensureTopics = async (admin: Admin): Promise<string[]> => {
     });
   }
   return missing.map(({ name }) => name);
+};
+
+export type ConsumedMessage = Message<string, string, string, string>;
+
+// The loop every consumer service shares: join `groupId`, read `topics` one message at
+// a time, and commit each offset only after `handle` resolves (processThenCommit).
+// A group with no committed offset starts at `startAt`: "latest" for services where
+// old messages are stale (evaluator, notifier), "earliest" for the archiver, which
+// should keep everything still retained.
+export const runConsumer = async ({
+  clientId,
+  groupId,
+  topics,
+  startAt,
+  handle,
+}: {
+  clientId: string;
+  groupId: string;
+  topics: string[];
+  startAt: "latest" | "earliest";
+  handle: (message: ConsumedMessage) => Promise<unknown>;
+}) => {
+  const admin = createAdmin(`${clientId}-admin`);
+  try {
+    await ensureTopics(admin);
+  } finally {
+    await admin.close();
+  }
+
+  const consumer = createConsumer(clientId, groupId);
+  const stream = await consumer.consume({
+    topics,
+    autocommit: false,
+    mode: MessagesStreamModes.COMMITTED,
+    fallbackMode: startAt === "earliest" ? MessagesStreamFallbackModes.EARLIEST : MessagesStreamFallbackModes.LATEST,
+  });
+
+  onShutdown(async () => {
+    await stream.close();
+    await consumer.close();
+  });
+
+  console.log(`${clientId}: group ${groupId} reading ${topics.join(", ")}`);
+  for await (const message of stream) {
+    await processThenCommit(message, handle);
+  }
 };
 
 // Runs `close` once on Ctrl+C or a stop signal, then exits.

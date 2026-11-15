@@ -6,6 +6,10 @@
   "description": "Kafka services for OpenWatch's quote stream. Reads the app's lib/ code; the app never imports from here.",
   "scripts": {
     "topics": "tsx --conditions=react-server --env-file=../../.env.local src/create-topics.ts",
+    "producer": "tsx --conditions=react-server --env-file=../../.env.local src/producer.ts",
+    "evaluator": "tsx --conditions=react-server --env-file=../../.env.local src/evaluator.ts",
+    "notifier": "tsx --conditions=react-server --env-file=../../.env.local src/notifier.ts",
+    "archiver": "tsx --conditions=react-server --env-file=../../.env.local src/archiver.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
