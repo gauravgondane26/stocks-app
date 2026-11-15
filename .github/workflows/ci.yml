@@ -41,3 +41,18 @@ jobs:
         working-directory: pipeline/worker
       - run: npm run typecheck
         working-directory: pipeline/worker
+
+  # The Airflow DAG's pure modules. The DAG integrity test needs Airflow itself, so it's
+  # skipped here and run inside the container (see pipeline/README.md).
+  pipeline-airflow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/airflow/requirements-test.txt
+      - run: pip install -r pipeline/airflow/requirements-test.txt
+      - run: python -m pytest pipeline/airflow/tests

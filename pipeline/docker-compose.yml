@@ -8,6 +8,9 @@
 # Run these from the repo root. Airflow gets only MONGODB_URI, read from .env.local by
 # --env-file; nothing else from that file reaches the container.
 #
+# Every port is bound to 127.0.0.1: Kafbat UI has no login and Airflow lets any visitor
+# in as admin (below), so nothing here may be reachable from the network.
+#
 # The Node services in pipeline/worker run on the host and reach Kafka on localhost:9092.
 # Containers on this network use kafka:29092. Topic data lives in the container, so it
 # survives `stop` but not `down`; the services recreate the topics on startup.
@@ -19,7 +22,7 @@ services:
     image: apache/kafka:4.2.2
     container_name: openwatch-kafka
     ports:
-      - "9092:9092"
+      - "127.0.0.1:9092:9092"
     environment:
       CLUSTER_ID: yzwOww5ZQSCtlCsoZ5kpKg
       KAFKA_NODE_ID: 1
@@ -50,8 +53,8 @@ services:
     container_name: openwatch-kafka-ui
     profiles: [ui]
     ports:
-      # 8080 is left for Airflow (Phase 8b).
-      - "8081:8080"
+      # 8080 is Airflow's.
+      - "127.0.0.1:8081:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: openwatch
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
@@ -62,17 +65,19 @@ services:
   airflow:
     # `airflow standalone`: API server, scheduler, DAG processor and triggerer in one
     # container, with SQLite and the LocalExecutor. About 1.5 to 2 GB instead of the 4 GB
-    # multi-container setup. It prints the generated admin password on first start
-    # (`docker logs openwatch-airflow | grep -i password`). State lives in the container,
-    # so it survives `stop` but not `down`.
+    # multi-container setup. State lives in the container, so it survives `stop` but not
+    # `down`.
     build: ./airflow
     image: openwatch-airflow:local
     container_name: openwatch-airflow
     profiles: [airflow]
     command: standalone
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
+      # Local demo only: every visitor is an admin, so there's no generated password to
+      # copy around. Safe only because the port is bound to localhost above.
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
       MONGODB_URI: ${MONGODB_URI:-}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       PYTHONPATH: /opt/airflow/include

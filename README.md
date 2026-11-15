@@ -75,7 +75,7 @@ The tests cover the pure code: alert rules, the trade tools, the Time Machine, t
 
 ## Data pipeline
 
-`pipeline/` holds a Kafka quote stream that runs locally beside the app: one producer polls the stocks people watch, and separate consumer groups evaluate alerts, notify (a dry run by default) and archive every quote to MongoDB, each at its own pace. A replay mode sends a past session through it at any hour. See [pipeline/README.md](pipeline/README.md) for the design, how to run it and a consumer-lag demo.
+`pipeline/` holds a data pipeline that runs locally beside the app. A Kafka quote stream: one producer polls the stocks people watch, and separate consumer groups evaluate alerts, notify (a dry run by default) and archive every quote to MongoDB, each at its own pace. A replay mode sends a past session through it at any hour. Airflow adds end-of-day batch jobs per market: they load the day's official bars for the S&P 500 or NIFTY 50 plus watchlists, check their quality, skip holidays, reconcile them with the stream and announce the day on Kafka. See [pipeline/README.md](pipeline/README.md) for the design, how to run it, a consumer-lag demo and the Airflow runs.
 
 ## Deploying
 
